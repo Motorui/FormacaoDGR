@@ -1,0 +1,254 @@
+﻿@page "/usersmanager"
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Identity
+@using MyWaySO.Areas.Identity.Models
+@using MyWaySO.Areas.Identity.Services
+@using MyWaySO.Pages.Admin.Components
+@using Syncfusion.Blazor.Cards
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Notifications
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<ApplicationUser> _UserManager
+@inject IAppUserService _appUserService
+@inject IAppRoleService _appRoleService
+@inject IAppUserRoleService _appUserRoleService
+@inject IUserUhService _userUhService
+@inject IUhService _uhService
+@inject IJSRuntime _jsRuntime
+
+<AuthorizeView>
+    <Authorized>
+        <div class="col-lg-12 col-md-12 col-sm12 col-12">
+            <SfCard>
+                <CardHeader>
+                    <h4>Utilizadores</h4>
+                </CardHeader>
+                <CardContent>
+                    @if (AllUsers == null)
+                    {
+                        <p><em>Loading...</em></p>
+                    }
+                    else
+                    {
+                        <table class="table table-bordered table-hover table-striped table-responsive">
+                            <thead>
+                                <tr>
+                                    @if (@context.User.IsInRole("temp")) //substituir por Admins
+                                    {
+
+                                    }
+                                    <th>Email</th>
+                                    <th>Nome</th>
+                                    <th>Função</th>
+                                    <th>UH'S</th>
+                                    <th>Menu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var userItem in AllUsers)
+                                {
+                                    <tr>
+                                        <td>@userItem.UserName</td>
+                                        <td>@userItem.Name</td>
+                                        <td>
+                                            @{var listRoles = AllUserRoles.Where(i => i.UserId == userItem.Id);}
+                                            @foreach (var r in listRoles)
+                                            {
+                                                <p>
+                                                    @{ var roleName = AllRoles.Where(i => i.Id == r.RoleId).Select(n => n.Name).FirstOrDefault().ToString();}
+                                                    @roleName
+                                                </p>
+                                            }
+                                        </td>
+                                        <td>
+                                            @{var listUhs = AllUserUhs.Where(i => i.UserId == userItem.Id);}
+                                            <SfChipList @key="listUhs">
+                                                <ChipCollection>
+
+                                                    @foreach (var u in listUhs)
+                                                    {
+                                                        var uhIata = AllUhs.Where(i => i.UhID == u.UhID).Select(n => n.UhNome).FirstOrDefault().ToString();
+                                                        <ChipListChip Text="@uhIata" CssClass="e-success"></ChipListChip>
+                                                    }
+                                                </ChipCollection>
+                                            </SfChipList>
+                                        </td>
+                                        <td>
+                                            <SfButton IconCss="e-icons e-edit" CssClass="e-round e-small e-primary" HtmlAttributes="@btnConfig("Editar","modal","#userModal")"
+                                                      @onclick="(() => PrepareForEdit(userItem))"></SfButton>
+                                            <SfButton IconCss="e-icons e-delete" CssClass="e-round e-small e-danger" HtmlAttributes=@btnConfig("Apagar","modal","#confirmDeleteModal")
+                                                      @onclick="(() => PrepareForDelete(userItem))"></SfButton>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                    }
+                </CardContent>
+                <CardFooter>
+                    <div>
+                        <SfButton IconCss="e-icons e-add" CssClass="e-success" HtmlAttributes=@btnConfig("Adicionar","modal","#userModal")
+                                  IconPosition="IconPosition.Right" @onclick="(() => InitializeUserObject())">Criar</SfButton>
+                    </div>
+                </CardFooter>
+            </SfCard>
+        </div>
+
+        <ConfirmDialog OnClick="@Delete" />
+
+        <UserModal ModelUser=modelUser DataChanged="@DataChanged" IsEdit="@isEdit">
+            <CustomHeader>@customHeader</CustomHeader>
+        </UserModal>
+
+    </Authorized>
+    <NotAuthorized>
+        <p>Não está logado.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+<SfToast @ref="ToastObj" Title="@ToastTitle" Content="@ToastContent" CssClass="@ToastCssClass">
+    <ToastPosition X="Center" Y="Top"></ToastPosition>
+</SfToast>
+
+@code {
+    IList<ApplicationUser> AllUsers = new List<ApplicationUser>();
+    IList<ApplicationRole> AllRoles = new List<ApplicationRole>();
+    IList<ApplicationUserRole> AllUserRoles = new List<ApplicationUserRole>();
+
+    IList<Uh> AllUhs = new List<Uh>();
+    IList<UserUh> AllUserUhs = new List<UserUh>();
+
+    ApplicationUser modelUser = new ApplicationUser();
+    string customHeader = string.Empty;
+    bool isEdit = false;
+
+    //protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
+    {
+        GetAllData();
+    }
+
+    private void PrepareForEdit(ApplicationUser applicationUser)
+    {
+        customHeader = "Editar Utilizador";
+        modelUser = applicationUser;
+        isEdit = true;
+    }
+
+    private void PrepareForDelete(ApplicationUser applicationUser)
+    {
+        modelUser = applicationUser;
+    }
+
+    private void InitializeUserObject()
+    {
+        modelUser = new ApplicationUser();
+        modelUser.PasswordHash = "*****";
+        customHeader = "Adicionar Utilizador";
+        isEdit = false;
+    }
+    private async Task Delete()
+    {
+        var user = await _UserManager.FindByIdAsync(modelUser.Id);
+        if (user != null)
+        {
+            try
+            {
+
+                await _userUhService.DeleteAllUserUh(user.Id).ConfigureAwait(true);
+                _appUserRoleService.DeleteAllUserRoles(user.Id);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                // Delete the user
+                var deletUser = await _UserManager.DeleteAsync(user);
+            }
+        }
+
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", "confirmDeleteModal");
+
+        modelUser = new ApplicationUser();
+        DataChanged();
+        ShowMsg(2);
+    }
+
+    private void DataChanged()
+    {
+        GetAllData();
+        StateHasChanged();
+    }
+
+    public void GetAllData()
+    {
+        AllUsers = new List<ApplicationUser>();
+
+        var user = _UserManager.Users.Select(x => new ApplicationUser
+        {
+            Id = x.Id,
+            UserName = x.UserName,
+            Name = x.Name,
+            PasswordHash = "*****"
+        });
+        foreach (var item in user)
+        {
+            AllUsers.Add(item);
+        }
+
+        AllRoles = _appRoleService.GetAllRoles();
+        AllUserRoles = _appUserRoleService.GetAllUserRoles();
+        AllUserUhs = _userUhService.GetAllUserUhs();
+        AllUhs = _uhService.GetAllUhs();
+    }
+
+    private Dictionary<string, object> btnConfig(string title, string dtoggle, string dtarget)
+    {
+        var btn = new Dictionary<string, object>()
+{
+            { "title", title},
+            { "data-toggle", dtoggle},
+            { "data-target", dtarget}
+        };
+
+        return btn;
+    }
+
+    SfToast ToastObj;
+
+    private string ToastTitle = "";
+    private string ToastContent = "";
+    private string ToastCssClass = "";
+    private string ToastIcon = "";
+
+    private ToastOption[] Toasts = new ToastOption[]
+    {
+        new ToastOption{ Title = "Sucesso!", Content="UH criada com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="UH editada com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="UH apagada com sucesso.", CssClass="e-toast-info", Icon="e-info toast-icons" }
+        };
+
+    private async void ShowMsg(int msg)
+    {
+        this.ToastTitle = this.Toasts[msg].Title;
+        this.ToastContent = this.Toasts[msg].Content;
+        this.ToastCssClass = this.Toasts[msg].CssClass;
+        this.ToastIcon = this.Toasts[msg].Icon;
+
+        await Task.Delay(100);
+        await this.ToastObj.Show();
+    }
+
+    private class ToastOption
+    {
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public string CssClass { get; set; }
+        public string Icon { get; set; }
+    }
+}

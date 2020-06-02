@@ -1,0 +1,43 @@
+﻿@using Syncfusion.Blazor.Buttons
+
+<div class="modal" tabindex="-1" role="dialog" id="confirmDeleteModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmação!!!</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Deseja de apagar esta entrada?</p>
+                <p>Não será possível recupera-la!</p>
+            </div>
+            <div class="modal-footer">
+                <SfButton IconCss="e-icons e-ok" CssClass="e-success" HtmlAttributes=@cdBtnConfig("Apagar","")
+                          IconPosition="IconPosition.Left" @onclick="OnClick">Sim</SfButton>
+                <SfButton IconCss="e-icons e-back" CssClass="e-warning" HtmlAttributes=@cdBtnConfig("Voltar","modal")
+                          IconPosition="IconPosition.Left">Cancelar</SfButton>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Dictionary<string, object> cdBtnConfig(string title, string ddismiss)
+    {
+        var btn = new Dictionary<string, object>()
+        {
+            { "title", title},
+            { "data-dismiss", ddismiss}
+        };
+
+        return btn;
+    }
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnClick { get; set; }
+}
