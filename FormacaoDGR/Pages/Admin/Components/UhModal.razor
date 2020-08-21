@@ -1,0 +1,124 @@
+﻿@using FormacaoDGR.Areas.Identity.Models
+@using FormacaoDGR.Areas.Identity.Services
+@using Syncfusion.Blazor.Notifications
+@using Syncfusion.Blazor.Buttons
+
+@inject IUhService _uhService
+@inject IJSRuntime _jsRuntime
+
+<div class="modal" tabindex="-1" role="dialog" id="uhModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@ModelUh" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label for="taskName">Nome</label>
+                        <input type="hidden" @bind-value="@ModelUh.UhID" />
+                        <InputText id="name" class="form-control" @bind-Value="@ModelUh.UhNome" />
+                        <ValidationMessage For="@(() => ModelUh.UhNome)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="taskName">IATA</label>
+                        <InputText id="name" class="form-control" @bind-Value="@ModelUh.UhIATA"
+                                   oninput="let p=this.selectionStart;this.value=this.value.toUpperCase();this.setSelectionRange(p, p);" />
+                        <ValidationMessage For="@(() => ModelUh.UhIATA)" />
+                    </div>
+                    <SfButton IconCss="e-icons e-ok" CssClass="e-success" HtmlAttributes="@uhMBtnConfig("submit","Gravar","")"
+                              IconPosition="IconPosition.Left">Submeter</SfButton>
+                    <SfButton IconCss="e-icons e-back" CssClass="e-warning" HtmlAttributes="@uhMBtnConfig("button","Voltar","modal")"
+                              IconPosition="IconPosition.Left">Cancelar</SfButton>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+<SfToast @ref="ToastObj" Title="@ToastTitle" Content="@ToastContent" CssClass="@ToastCssClass">
+    <ToastPosition X="Center" Y="Top"></ToastPosition>
+</SfToast>
+
+@code {
+    private Dictionary<string, object> uhMBtnConfig(string type, string title, string ddismiss)
+    {
+        var btn = new Dictionary<string, object>()
+    {
+            {"type", type},
+            { "title", title},
+            { "data-dismiss", ddismiss}
+        };
+
+        return btn;
+    }
+
+    SfToast ToastObj;
+
+
+    private string ToastTitle = "";
+    private string ToastContent = "";
+    private string ToastCssClass = "";
+    private string ToastIcon = "";
+
+    private ToastOption[] Toasts = new ToastOption[]
+{
+        new ToastOption{ Title = "Sucesso!", Content="UH criada com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="UH editada com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="UH apagada com sucesso.", CssClass="e-toast-info", Icon="e-info toast-icons" }
+        };
+
+    [Parameter]
+    public Uh ModelUh { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+
+    private async void HandleValidSubmit()
+    {
+        if (ModelUh.UhID == Guid.Empty)
+        {
+            _uhService.AddUh(ModelUh);
+            ShowMsg(0);
+        }
+        else
+        {
+            _uhService.UpdateUh(ModelUh);
+            ShowMsg(1);
+        }
+
+        await CloseUhModal("uhModal");
+        DataChanged?.Invoke();
+    }
+
+    private async void ShowMsg(int msg)
+    {
+        this.ToastTitle = this.Toasts[msg].Title;
+        this.ToastContent = this.Toasts[msg].Content;
+        this.ToastCssClass = this.Toasts[msg].CssClass;
+        this.ToastIcon = this.Toasts[msg].Icon;
+
+        await Task.Delay(100);
+        await this.ToastObj.Show();
+    }
+
+    private class ToastOption
+    {
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public string CssClass { get; set; }
+        public string Icon { get; set; }
+    }
+
+    private async Task CloseUhModal(string modalId)
+    {
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", modalId);
+    }
+}

@@ -1,0 +1,16 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using FormacaoDGR.Areas.Identity.Models
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<ul class="navbar-nav">
+@if (SignInManager.IsSignedIn(User))
+{
+
+}
+else
+{
+
+}
+</ul>

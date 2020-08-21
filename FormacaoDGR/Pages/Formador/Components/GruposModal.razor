@@ -1,0 +1,118 @@
+﻿@using FormacaoDGR.Data.Models
+@using FormacaoDGR.Data.Services
+@using Syncfusion.Blazor.Notifications
+@using Syncfusion.Blazor.Buttons
+
+@inject IGrupoService _grupoService
+@inject IJSRuntime _jsRuntime
+
+<div class="modal" tabindex="-1" role="dialog" id="grupoModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@ModelGrupo" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label for="taskName">Nome</label>
+                        <input type="hidden" @bind-value="@ModelGrupo.ID" />
+                        <InputText id="name" class="form-control" @bind-Value="@ModelGrupo.Nome" />
+                        <ValidationMessage For="@(() => ModelGrupo.Nome)" />
+                    </div>
+                    <SfButton IconCss="e-icons e-ok" CssClass="e-success" HtmlAttributes="@uhMBtnConfig("submit","Gravar","")"
+                              IconPosition="IconPosition.Left">Submeter</SfButton>
+                    <SfButton IconCss="e-icons e-back" CssClass="e-warning" HtmlAttributes="@uhMBtnConfig("button","Voltar","modal")"
+                              IconPosition="IconPosition.Left">Cancelar</SfButton>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+<SfToast @ref="ToastObj" Title="@ToastTitle" Content="@ToastContent" CssClass="@ToastCssClass">
+    <ToastPosition X="Center" Y="Top"></ToastPosition>
+</SfToast>
+
+@code {
+    private Dictionary<string, object> uhMBtnConfig(string type, string title, string ddismiss)
+    {
+        var btn = new Dictionary<string, object>()
+    {
+            {"type", type},
+            { "title", title},
+            { "data-dismiss", ddismiss}
+        };
+
+        return btn;
+    }
+
+    SfToast ToastObj;
+
+
+    private string ToastTitle = "";
+    private string ToastContent = "";
+    private string ToastCssClass = "";
+    private string ToastIcon = "";
+
+    private ToastOption[] Toasts = new ToastOption[]
+    {
+        new ToastOption{ Title = "Sucesso!", Content="Grupo criado com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="Grupo editado com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="Grupo apagado com sucesso.", CssClass="e-toast-info", Icon="e-info toast-icons" }
+    };
+
+    [Parameter]
+    public Grupo ModelGrupo { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+
+    private async void HandleValidSubmit()
+    {
+        if (ModelGrupo.ID == Guid.Empty)
+        {
+            await _grupoService.AddGrupoAsync(ModelGrupo);
+            ShowMsg(0);
+        }
+        else
+        {
+            await _grupoService.UpdateGrupoAsync(ModelGrupo);
+            ShowMsg(1);
+        }
+
+        await CloseGrupoModal("grupoModal");
+        DataChanged?.Invoke();
+    }
+
+    private async void ShowMsg(int msg)
+    {
+        this.ToastTitle = this.Toasts[msg].Title;
+        this.ToastContent = this.Toasts[msg].Content;
+        this.ToastCssClass = this.Toasts[msg].CssClass;
+        this.ToastIcon = this.Toasts[msg].Icon;
+
+        await Task.Delay(100);
+        await this.ToastObj.Show();
+    }
+
+    private class ToastOption
+    {
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public string CssClass { get; set; }
+        public string Icon { get; set; }
+    }
+
+    private async Task CloseGrupoModal(string modalId)
+    {
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", modalId);
+    }
+}

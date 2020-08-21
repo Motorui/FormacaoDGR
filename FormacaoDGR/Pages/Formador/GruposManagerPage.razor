@@ -1,0 +1,189 @@
+﻿@page "/gruposmanager"
+@attribute [Authorize]
+
+@using FormacaoDGR.Data.Models
+@using FormacaoDGR.Data.Services
+@using FormacaoDGR.Pages.Components
+@using FormacaoDGR.Pages.Formador.Components
+@using Syncfusion.Blazor.Cards
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Notifications
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IGrupoService _grupoService
+@inject IJSRuntime _jsRuntime
+
+<AuthorizeView>
+    <Authorized>
+        <div class="col-lg-12 col-md-12 col-sm12 col-12">
+            <SfCard>
+                <CardHeader>
+                    <h4>Grupos</h4>
+                </CardHeader>
+                <CardContent>
+                    @if (AllGrupos == null)
+                    {
+                        <p><em>Loading...</em></p>
+                    }
+                    else
+                    {
+                        <table class="table table-bordered table-hover table-striped table-responsive">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    @if (@context.User.IsInRole("temp")) //substituir por Admins
+                                    {
+                                        <th>Criado em:</th>
+                                        <th>Criado por:</th>
+                                        <th>Atualizado em:</th>
+                                        <th>Atualizado por:</th>
+                                    }
+                                    <th>Menu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (Grupo grupoItem in AllGrupos)
+                                {
+                                    <tr>
+                                        <td>@grupoItem.Nome</td>
+                                        @if (@context.User.IsInRole("temp")) //substituir por Admins
+                                        {
+                                            <td>@grupoItem.CreatedAt</td>
+                                            <td>@grupoItem.CreatedBy</td>
+                                            <td>@grupoItem.LastUpdatedAt</td>
+                                            <td>@grupoItem.LastUpdatedBy</td>
+                                        }
+                                        <td>
+                                            <SfButton IconCss="e-icons e-edit" CssClass="e-round e-small e-primary" HtmlAttributes="@btnConfig("Editar","modal","#grupoModal")"
+                                                      @onclick="(() => PrepareForEdit(grupoItem))"></SfButton>
+                                            <SfButton IconCss="e-icons e-delete" CssClass="e-round e-small e-danger" HtmlAttributes=@btnConfig("Apagar","modal","#confirmDeleteModal")
+                                                      @onclick="(() => PrepareForDelete(grupoItem))"></SfButton>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                    }
+                </CardContent>
+                <CardFooter>
+                    <div>
+                        <SfButton IconCss="e-icons e-add" CssClass="e-success" HtmlAttributes=@btnConfig("Adicionar","modal","#grupoModal")
+                                  IconPosition="IconPosition.Right" @onclick="(() => InitializeUhObject())">Criar</SfButton>
+                    </div>
+                </CardFooter>
+            </SfCard>
+        </div>
+
+        <ConfirmDialog OnClick="@Delete" />
+
+        <GruposModal ModelGrupo=modelGrupo DataChanged="@DataChanged">
+            <CustomHeader>@customHeader</CustomHeader>
+        </GruposModal>
+
+    </Authorized>
+    <NotAuthorized>
+        <p>Não está logado.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+<SfToast @ref="ToastObj" Title="@ToastTitle" Content="@ToastContent" CssClass="@ToastCssClass">
+    <ToastPosition X="Center" Y="Top"></ToastPosition>
+</SfToast>
+
+@code {
+
+    private Dictionary<string, object> btnConfig(string title, string dtoggle, string dtarget)
+    {
+        var btn = new Dictionary<string, object>()
+        {
+            { "title", title},
+            { "data-toggle", dtoggle},
+            { "data-target", dtarget}
+        };
+
+        return btn;
+    }
+
+    SfToast ToastObj;
+
+    private string ToastTitle = "";
+    private string ToastContent = "";
+    private string ToastCssClass = "";
+    private string ToastIcon = "";
+
+    private ToastOption[] Toasts = new ToastOption[]
+    {
+        new ToastOption{ Title = "Sucesso!", Content="Grupo criado com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="Grupo editado com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="Grupo apagado com sucesso.", CssClass="e-toast-info", Icon="e-info toast-icons" }
+    };
+
+    IList<Grupo> AllGrupos = new List<Grupo>();
+    Grupo modelGrupo = new Grupo();
+    string customHeader = string.Empty;
+
+    //protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
+    {
+       await GetAllGrupos();
+    }
+
+    private void InitializeUhObject()
+    {
+        modelGrupo = new Grupo();
+        customHeader = "Adicionar Grupo";
+    }
+
+    private async void DataChanged()
+    {
+        await GetAllGrupos();
+        StateHasChanged();
+    }
+
+    public async Task GetAllGrupos()
+    {
+        AllGrupos = await _grupoService.GetAllGruposAsync();
+    }
+
+    private void PrepareForEdit(Grupo grupo)
+    {
+        customHeader = "Editar Grupo";
+        modelGrupo = grupo;
+    }
+
+    private void PrepareForDelete(Grupo grupo)
+    {
+        modelGrupo = grupo;
+    }
+
+    private async Task Delete()
+    {
+        await _grupoService.DeleteGrupoAsync(modelGrupo);
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", "confirmDeleteModal");
+
+        AllGrupos = await _grupoService.GetAllGruposAsync();
+        modelGrupo = new Grupo();
+        ShowMsg(2);
+    }
+
+    private async void ShowMsg(int msg)
+    {
+        this.ToastTitle = this.Toasts[msg].Title;
+        this.ToastContent = this.Toasts[msg].Content;
+        this.ToastCssClass = this.Toasts[msg].CssClass;
+        this.ToastIcon = this.Toasts[msg].Icon;
+
+        await Task.Delay(100);
+        await this.ToastObj.Show();
+    }
+
+    private class ToastOption
+    {
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public string CssClass { get; set; }
+        public string Icon { get; set; }
+    }
+
+}

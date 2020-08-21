@@ -1,0 +1,191 @@
+﻿@page "/uhsmanager"
+@attribute [Authorize]
+
+@using FormacaoDGR.Areas.Identity.Models
+@using FormacaoDGR.Areas.Identity.Services
+@using FormacaoDGR.Pages.Components
+@using FormacaoDGR.Pages.Admin.Components
+@using Syncfusion.Blazor.Cards
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Notifications
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IUhService _uhService
+@inject IJSRuntime _jsRuntime
+
+<AuthorizeView>
+    <Authorized>
+        <div class="col-lg-12 col-md-12 col-sm12 col-12">
+            <SfCard>
+                <CardHeader>
+                    <h4>Unidades de Handling</h4>
+                </CardHeader>
+                <CardContent>
+                    @if (AllUhs == null)
+                    {
+                        <p><em>Loading...</em></p>
+                    }
+                    else
+                    {
+                        <table class="table table-bordered table-hover table-striped table-responsive">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>IATA</th>
+                                    @if (@context.User.IsInRole("temp")) //substituir por Admins
+                                    {
+                                        <th>Criado em:</th>
+                                        <th>Criado por:</th>
+                                        <th>Atualizado em:</th>
+                                        <th>Atualizado por:</th>
+                                    }
+                                    <th>Menu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (Uh uhItem in AllUhs)
+                                {
+                                    <tr>
+                                        <td>@uhItem.UhNome</td>
+                                        <td>@uhItem.UhIATA</td>
+                                        @if (@context.User.IsInRole("temp")) //substituir por Admins
+                                        {
+                                            <td>@uhItem.CreatedAt</td>
+                                            <td>@uhItem.CreatedBy</td>
+                                            <td>@uhItem.LastUpdatedAt</td>
+                                            <td>@uhItem.LastUpdatedBy</td>
+                                        }
+                                        <td>
+                                            <SfButton IconCss="e-icons e-edit" CssClass="e-round e-small e-primary" HtmlAttributes="@btnConfig("Editar","modal","#uhModal")"
+                                                      @onclick="(() => PrepareForEdit(uhItem))"></SfButton>
+                                            <SfButton IconCss="e-icons e-delete" CssClass="e-round e-small e-danger" HtmlAttributes=@btnConfig("Apagar","modal","#confirmDeleteModal")
+                                                      @onclick="(() => PrepareForDelete(uhItem))"></SfButton>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                    }
+                </CardContent>
+                <CardFooter>
+                    <div>
+                        <SfButton IconCss="e-icons e-add" CssClass="e-success" HtmlAttributes=@btnConfig("Adicionar","modal","#uhModal")
+                                  IconPosition="IconPosition.Right" @onclick="(() => InitializeUhObject())">Criar</SfButton>
+                    </div>
+                </CardFooter>
+            </SfCard>
+        </div>
+
+        <ConfirmDialog OnClick="@Delete" />
+
+        <UhModal ModelUh=modelUh DataChanged="@DataChanged">
+            <CustomHeader>@customHeader</CustomHeader>
+        </UhModal>
+
+    </Authorized>
+    <NotAuthorized>
+        <p>Não está logado.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+<SfToast @ref="ToastObj" Title="@ToastTitle" Content="@ToastContent" CssClass="@ToastCssClass">
+    <ToastPosition X="Center" Y="Top"></ToastPosition>
+</SfToast>
+
+@code {
+
+    private Dictionary<string, object> btnConfig(string title, string dtoggle, string dtarget)
+    {
+        var btn = new Dictionary<string, object>()
+        {
+            { "title", title},
+            { "data-toggle", dtoggle},
+            { "data-target", dtarget}
+        };
+
+        return btn;
+    }
+
+    SfToast ToastObj;
+
+    private string ToastTitle = "";
+    private string ToastContent = "";
+    private string ToastCssClass = "";
+    private string ToastIcon = "";
+
+    private ToastOption[] Toasts = new ToastOption[]
+    {
+        new ToastOption{ Title = "Sucesso!", Content="UH criada com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="UH editada com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="UH apagada com sucesso.", CssClass="e-toast-info", Icon="e-info toast-icons" }
+    };
+
+    IList<Uh> AllUhs = new List<Uh>();
+    Uh modelUh = new Uh();
+    string customHeader = string.Empty;
+
+    //protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
+    {
+        GetAllUhs();
+    }
+
+    private void InitializeUhObject()
+    {
+        modelUh = new Uh();
+        customHeader = "Adicionar UH";
+    }
+
+    private void DataChanged()
+    {
+        GetAllUhs();
+        StateHasChanged();
+    }
+
+    public void GetAllUhs()
+    {
+        AllUhs = _uhService.GetAllUhs();
+    }
+
+    private void PrepareForEdit(Uh uh)
+    {
+        customHeader = "Editar UH";
+        modelUh = uh;
+    }
+
+    private void PrepareForDelete(Uh uh)
+    {
+        modelUh = uh;
+    }
+
+    private async Task Delete()
+    {
+        _uhService.DeleteUh(modelUh);
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", "confirmDeleteModal");
+
+        AllUhs = _uhService.GetAllUhs();
+        modelUh = new Uh();
+        ShowMsg(2);
+    }
+
+    private async void ShowMsg(int msg)
+    {
+        this.ToastTitle = this.Toasts[msg].Title;
+        this.ToastContent = this.Toasts[msg].Content;
+        this.ToastCssClass = this.Toasts[msg].CssClass;
+        this.ToastIcon = this.Toasts[msg].Icon;
+
+        await Task.Delay(100);
+        await this.ToastObj.Show();
+    }
+
+    private class ToastOption
+    {
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public string CssClass { get; set; }
+        public string Icon { get; set; }
+    }
+
+}

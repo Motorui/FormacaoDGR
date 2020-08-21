@@ -1,0 +1,330 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using FormacaoDGR.Areas.Identity.Models
+@using FormacaoDGR.Areas.Identity.Services
+@using Syncfusion.Blazor.Notifications
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.DropDowns
+
+@inject UserManager<ApplicationUser> _UserManager
+@inject IAppUserService _appUserService
+@inject IAppRoleService _appRoleService
+@inject IAppUserRoleService _appUserRoleService
+@inject IUserUhService _userUhService
+@inject IUhService _uhService
+@inject IJSRuntime _jsRuntime
+
+<div class="modal" tabindex="-1" role="dialog" id="userModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@ModelUser" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <input type="hidden" @bind-value="@ModelUser.Id" />
+                        <label for="Name">Nome</label>
+                        <InputText id="Name" class="form-control" @bind-Value="@ModelUser.Name" />
+                        <ValidationMessage For="@(() => ModelUser.Name)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UserName">Email</label>
+                        <InputText id="UserName" class="form-control" @bind-Value="@ModelUser.UserName" />
+                        <ValidationMessage For="@(() => ModelUser.UserName)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="UserName">Password</label>
+                        <InputText type="password" autocomplete="password" id="PasswordHash" class="form-control" @bind-Value="@ModelUser.PasswordHash" />
+                        <ValidationMessage For="@(() => ModelUser.PasswordHash)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="Role">Tipo</label>
+                        <SfDropDownList TValue="string" TItem="ApplicationRole" @bind-Value="@OwnedRoleId"
+                                        PopupHeight="230px" Placeholder="Selecionar Tipo" DataSource="@AllRoles">
+                            <DropDownListFieldSettings Text="Name" Value="Id"></DropDownListFieldSettings>
+                        </SfDropDownList>
+                    </div>
+                    <div class="form-group">
+                        <label for="Uhs">UH's</label>
+                        <SfMultiSelect TValue="Guid[]" Placeholder="Selecionar UH's" @bind-Value="@OwnedUhs" DataSource="@AllModalUhs">
+                            <MultiSelectFieldSettings Text="UhIATA" Value="UhID"></MultiSelectFieldSettings>
+                        </SfMultiSelect>
+                    </div>
+                    <SfButton IconCss="e-icons e-ok" CssClass="e-success" HtmlAttributes="@uhMBtnConfig("submit", "Gravar", "")"
+                              IconPosition="IconPosition.Left">Submeter</SfButton>
+                    <SfButton IconCss="e-icons e-back" CssClass="e-warning" HtmlAttributes="@uhMBtnConfig("button", "Voltar", "modal")"
+                              IconPosition="IconPosition.Left">Cancelar</SfButton>
+                </EditForm>
+                <p>
+                    <span style="color:red">@strError</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<SfToast @ref="ToastObj" Title="@ToastTitle" Content="@ToastContent" CssClass="@ToastCssClass">
+    <ToastPosition X="Center" Y="Top"></ToastPosition>
+</SfToast>
+
+@code {
+    [Parameter]
+    public ApplicationUser ModelUser { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+
+    [Parameter]
+    public bool IsEdit { get; set; }
+
+    IList<Uh> AllModalUhs = new List<Uh>();
+    IList<ApplicationRole> AllRoles = new List<ApplicationRole>();
+
+    IList<UserUh> ownedUhList = new List<UserUh>();
+    public Guid[] OwnedUhs { get; set; } = new Guid[] { };
+
+    ApplicationUserRole ownedRole = new ApplicationUserRole();
+    public string OwnedRoleId { get; set; } = string.Empty;
+    // To hold any possible errors
+    string strError = "";
+
+    protected override void OnInitialized()
+    {
+        AllModalUhs = _uhService.GetAllUhs();
+        AllRoles = _appRoleService.GetAllRoles();
+    }
+
+    protected override void OnParametersSet()
+    {
+        FillOwnedList(ModelUser.Id);
+    }
+
+    private void FillOwnedList(string uid)
+    {
+        ownedUhList = _userUhService.GetOwnedUserUhs(uid);
+        OwnedUhs = ownedUhList.Select(i => i.Uh.UhID).ToArray();
+
+        ownedRole = _appUserRoleService.GetUserRole(uid);
+        if (ownedRole != null)
+        {
+            OwnedRoleId = ownedRole.RoleId;
+        }
+        else
+        {
+            OwnedRoleId = string.Empty;
+        }
+
+    }
+
+    private async void HandleValidSubmit()
+    {
+        try
+        {
+            if (IsEdit)
+            {
+                // Get the user
+                var user = await _UserManager.FindByIdAsync(ModelUser.Id);
+
+                // Update the user
+                user.Name = ModelUser.Name;
+                user.UserName = ModelUser.UserName;
+                user.NormalizedUserName = ModelUser.UserName.ToUpper();
+                user.Email = ModelUser.UserName;
+                user.NormalizedEmail = ModelUser.UserName.ToUpper();
+                user.PasswordHash = user.PasswordHash;
+
+                // Only update password if the current value
+                // is not the default value
+                if (ModelUser.PasswordHash != "*****")
+                {
+                    var resetToken = await _UserManager.GeneratePasswordResetTokenAsync(user);
+                    var passworduser = await _UserManager
+                        .ResetPasswordAsync(
+                            user,
+                            resetToken,
+                            ModelUser.PasswordHash
+                        );
+
+                    if (!passworduser.Succeeded)
+                    {
+                        if (passworduser.Errors.FirstOrDefault() != null)
+                        {
+                            strError = passworduser.Errors.FirstOrDefault().Description;
+                        }
+                        else
+                        {
+                            strError = "Pasword error";
+                        }
+                        // Keep the popup opened
+                        return;
+                    }
+                }
+
+                var updateResult = await _UserManager.UpdateAsync(user);
+
+                if (!updateResult.Succeeded)
+                {
+                    if (updateResult.Errors.FirstOrDefault() != null)
+                    {
+                        strError = updateResult.Errors.FirstOrDefault().Description;
+                    }
+                    else
+                    {
+                        strError = "Update error";
+                    }
+                    // Keep the popup opened
+                    return;
+                }
+                else
+                {
+                    await _userUhService.DeleteAllUserUh(ModelUser.Id);
+                    _appUserRoleService.DeleteAllUserRoles(ModelUser.Id);
+
+                    if (OwnedUhs != null)
+                    {
+                        foreach (var ownedUh in OwnedUhs)
+                        {
+                            UserUh itemUserUh = new UserUh()
+                            {
+                                UhID = ownedUh,
+                                UserId = user.Id
+                            };
+                            _userUhService.AddUserUh(itemUserUh);
+                        }
+                    }
+
+                    if (OwnedRoleId != null)
+                    {
+                        ApplicationUserRole itemUserRole = new ApplicationUserRole()
+                        {
+                            RoleId = OwnedRoleId,
+                            UserId = user.Id
+                        };
+                        _appUserRoleService.AddUserRole(itemUserRole);
+                    }
+                }
+
+                ShowMsg(1);
+
+            }
+            else
+            {
+                // Insert new user
+                var NewUser = new ApplicationUser
+                {
+                    Name = ModelUser.Name,
+                    UserName = ModelUser.UserName,
+                    NormalizedUserName = ModelUser.UserName.ToUpper(),
+                    Email = ModelUser.UserName,
+                    NormalizedEmail = ModelUser.UserName.ToUpper()
+                };
+                var CreateResult = await _UserManager.CreateAsync(NewUser, ModelUser.PasswordHash);
+                if (!CreateResult.Succeeded)
+                {
+                    if (CreateResult.Errors.FirstOrDefault() != null)
+                    {
+                        strError = CreateResult.Errors.FirstOrDefault().Description;
+                    }
+                    else
+                    {
+                        strError = "Create error";
+                    }
+                    // Keep the popup opened
+                    return;
+                }
+                else
+                {
+                    if (OwnedUhs != null)
+                    {
+                        foreach (var ownedUh in OwnedUhs)
+                        {
+                            UserUh itemUserUh = new UserUh()
+                            {
+                                UhID = ownedUh,
+                                UserId = NewUser.Id
+                            };
+                            _userUhService.AddUserUh(itemUserUh);
+                        }
+                    }
+
+                    if (OwnedRoleId != null)
+                    {
+                        ApplicationUserRole itemUserRole = new ApplicationUserRole()
+                        {
+                            RoleId = OwnedRoleId,
+                            UserId = NewUser.Id
+                        };
+                        _appUserRoleService.AddUserRole(itemUserRole);
+                    }
+                }
+
+                ShowMsg(0);
+            }
+
+            await CloseUserModal("userModal");
+            DataChanged?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            strError = ex.GetBaseException().Message;
+        }
+    }
+
+    private async void ShowMsg(int msg)
+    {
+        this.ToastTitle = this.Toasts[msg].Title;
+        this.ToastContent = this.Toasts[msg].Content;
+        this.ToastCssClass = this.Toasts[msg].CssClass;
+        this.ToastIcon = this.Toasts[msg].Icon;
+
+        await Task.Delay(100);
+        await this.ToastObj.Show();
+    }
+
+    private async Task CloseUserModal(string modalId)
+    {
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", modalId);
+    }
+
+    private Dictionary<string, object> uhMBtnConfig(string type, string title, string ddismiss)
+    {
+        var btn = new Dictionary<string, object>()
+{
+            {"type", type},
+            { "title", title},
+            { "data-dismiss", ddismiss}
+        };
+
+        return btn;
+    }
+
+    SfToast ToastObj;
+
+    private string ToastTitle = "";
+    private string ToastContent = "";
+    private string ToastCssClass = "";
+    private string ToastIcon = "";
+
+    private class ToastOption
+    {
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public string CssClass { get; set; }
+        public string Icon { get; set; }
+    }
+
+    private ToastOption[] Toasts = new ToastOption[]
+    {
+        new ToastOption{ Title = "Sucesso!", Content="Utilizador criado com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="Utilizador editado com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastOption{ Title = "Sucesso!", Content="Utilizador apagado com sucesso.", CssClass="e-toast-info", Icon="e-info toast-icons" }
+        };
+
+}
