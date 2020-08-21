@@ -67,7 +67,7 @@ namespace FormacaoDGR.Data.Services
         {
             try
             {
-                _db.Entry(empresa).State = EntityState.Modified;
+                _ = _db.Entry(empresa).State = EntityState.Modified;
                 _ = await _db.SaveChangesAsync();
                 return empresa;
             }

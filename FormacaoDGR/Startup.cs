@@ -1,5 +1,9 @@
+using FormacaoDGR.Areas.Identity;
+using FormacaoDGR.Areas.Identity.Models;
+using FormacaoDGR.Areas.Identity.Services;
+using FormacaoDGR.Data;
+using FormacaoDGR.Data.Services;
 using Microsoft.AspNetCore.Builder;
-using Syncfusion.Blazor;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -9,17 +13,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using FormacaoDGR.Areas.Identity;
-using FormacaoDGR.Areas.Identity.Models;
-using FormacaoDGR.Areas.Identity.Services;
-using FormacaoDGR.Data;
-using FormacaoDGR.Shared;
 using Newtonsoft.Json.Serialization;
+using Sotsera.Blazor.Toaster.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using FormacaoDGR.Data.Services;
 
 namespace FormacaoDGR
 {
@@ -36,6 +35,14 @@ namespace FormacaoDGR
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddToaster(config =>
+            {
+                //example customizations
+                config.PositionClass = Defaults.Classes.Position.TopCenter;
+                config.PreventDuplicates = true;
+                config.NewestOnTop = false;
+            });
+
             services.AddHttpContextAccessor();
 
             services.AddControllers()
@@ -45,7 +52,6 @@ namespace FormacaoDGR
                 });
 
             #region Localization
-            services.AddSyncfusionBlazor();
             services.AddLocalization(options => options.ResourcesPath = "Resources");
             services.Configure<RequestLocalizationOptions>(options =>
             {
@@ -62,7 +68,6 @@ namespace FormacaoDGR
                  new QueryStringRequestCultureProvider() // Here, You can also use other localization provider
                 };
             });
-            services.AddSingleton(typeof(ISyncfusionStringLocalizer), typeof(SyncfusionLocalizer));
             #endregion
 
             services.AddDbContext<ApplicationDbContext>(options =>
@@ -113,9 +118,6 @@ namespace FormacaoDGR
             #region Localization
             app.UseRequestLocalization(app.ApplicationServices.GetService<IOptions<RequestLocalizationOptions>>().Value);
             #endregion
-
-            //Register Syncfusion license
-            Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("MjgxODg1QDMxMzgyZTMyMmUzME9aVWd2YkhaZytXTHNUNnpFYUNkU25WalN6bEJFQUFXS2FTMDJkWGhhT2M9");
 
             if (env.IsDevelopment())
             {

@@ -5,10 +5,8 @@
 @using FormacaoDGR.Data.Services
 @using FormacaoDGR.Pages.Components
 @using FormacaoDGR.Pages.Formador.Components
-@using Syncfusion.Blazor.Cards
-@using Syncfusion.Blazor.Buttons
-@using Syncfusion.Blazor.Notifications
 
+@inject Sotsera.Blazor.Toaster.IToaster Toaster
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IEmpresaService _empresaService
 @inject IJSRuntime _jsRuntime
@@ -16,11 +14,9 @@
 <AuthorizeView>
     <Authorized>
         <div class="col-lg-12 col-md-12 col-sm12 col-12">
-            <SfCard>
-                <CardHeader>
-                    <h4>Empresas</h4>
-                </CardHeader>
-                <CardContent>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Empresas</h5>
                     @if (AllEmpresas == null)
                     {
                         <p><em>Loading...</em></p>
@@ -54,10 +50,18 @@
                                             <td>@empresaItem.LastUpdatedBy</td>
                                         }
                                         <td>
-                                            <SfButton IconCss="e-icons e-edit" CssClass="e-round e-small e-primary" HtmlAttributes="@btnConfig("Editar","modal","#empresaModal")"
-                                                      @onclick="(() => PrepareForEdit(empresaItem))"></SfButton>
-                                            <SfButton IconCss="e-icons e-delete" CssClass="e-round e-small e-danger" HtmlAttributes=@btnConfig("Apagar","modal","#confirmDeleteModal")
-                                                      @onclick="(() => PrepareForDelete(empresaItem))"></SfButton>
+                                            <span data-toggle="tooltip" data-placement="top" title="Editar">
+                                                <button type="button" class="btn btn-primary btn-circle btn-sm" data-toggle="modal" data-target="#empresaModal"
+                                                        @onclick="(() => PrepareForEdit(empresaItem))">
+                                                    <span class="oi oi-pencil"></span>
+                                                </button>
+                                            </span>
+                                            <span data-toggle="tooltip" data-placement="top" title="Apagar">
+                                                <button type="button" class="btn btn-danger btn-circle btn-sm" data-toggle="modal" data-target="#confirmDeleteModal"
+                                                        @onclick="(() => PrepareForDelete(empresaItem))">
+                                                    <span class="oi oi-trash"></span>
+                                                </button>
+                                            </span>
                                         </td>
                                     </tr>
                                 }
@@ -65,14 +69,13 @@
                         </table>
 
                     }
-                </CardContent>
-                <CardFooter>
-                    <div>
-                        <SfButton IconCss="e-icons e-add" CssClass="e-success" HtmlAttributes=@btnConfig("Adicionar","modal","#empresaModal")
-                                  IconPosition="IconPosition.Right" @onclick="(() => InitializeUhObject())">Criar</SfButton>
-                    </div>
-                </CardFooter>
-            </SfCard>
+                    <span data-toggle="tooltip" data-placement="top" title="Adicionar">
+                        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#empresaModal" @onclick="(() => InitializeEmpresaObject())">
+                            Criar <span class="oi oi-plus" style="font-size: 12px;"></span>
+                        </button>
+                    </span>
+                </div>
+            </div>
         </div>
 
         <ConfirmDialog OnClick="@Delete" />
@@ -87,37 +90,7 @@
     </NotAuthorized>
 </AuthorizeView>
 
-<SfToast @ref="ToastObj" Title="@ToastTitle" Content="@ToastContent" CssClass="@ToastCssClass">
-    <ToastPosition X="Center" Y="Top"></ToastPosition>
-</SfToast>
-
 @code {
-
-    private Dictionary<string, object> btnConfig(string title, string dtoggle, string dtarget)
-    {
-        var btn = new Dictionary<string, object>()
-        {
-            { "title", title},
-            { "data-toggle", dtoggle},
-            { "data-target", dtarget}
-        };
-
-        return btn;
-    }
-
-    SfToast ToastObj;
-
-    private string ToastTitle = "";
-    private string ToastContent = "";
-    private string ToastCssClass = "";
-    private string ToastIcon = "";
-
-    private ToastOption[] Toasts = new ToastOption[]
-    {
-        new ToastOption{ Title = "Sucesso!", Content="Empresa criada com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
-        new ToastOption{ Title = "Sucesso!", Content="Empresa editada com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
-        new ToastOption{ Title = "Sucesso!", Content="Empresa apagada com sucesso.", CssClass="e-toast-info", Icon="e-info toast-icons" }
-    };
 
     IList<Empresa> AllEmpresas = new List<Empresa>();
     Empresa modelEmpresa = new Empresa();
@@ -129,7 +102,7 @@
         await GetAllEmpresas();
     }
 
-    private void InitializeUhObject()
+    private void InitializeEmpresaObject()
     {
         modelEmpresa = new Empresa();
         customHeader = "Adicionar Empresa";
@@ -148,7 +121,7 @@
 
     private void PrepareForEdit(Empresa empresa)
     {
-        customHeader = "Editar Grupo";
+        customHeader = "Editar Empresa";
         modelEmpresa = empresa;
     }
 
@@ -164,26 +137,9 @@
 
         await GetAllEmpresas();
         modelEmpresa = new Empresa();
-        ShowMsg(2);
-    }
-
-    private async void ShowMsg(int msg)
-    {
-        this.ToastTitle = this.Toasts[msg].Title;
-        this.ToastContent = this.Toasts[msg].Content;
-        this.ToastCssClass = this.Toasts[msg].CssClass;
-        this.ToastIcon = this.Toasts[msg].Icon;
 
         await Task.Delay(100);
-        await this.ToastObj.Show();
-    }
-
-    private class ToastOption
-    {
-        public string Title { get; set; }
-        public string Content { get; set; }
-        public string CssClass { get; set; }
-        public string Icon { get; set; }
+        Toaster.Error("Empresa apagada com sucesso", "Sucesso!");
     }
 
 }

@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using FormacaoDGR.Areas.Identity.Models;
+﻿using FormacaoDGR.Areas.Identity.Models;
 using FormacaoDGR.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,14 +11,13 @@ namespace FormacaoDGR.Areas.Identity.Services
 {
     public interface IUserUhService
     {
-        IList<UserUh> GetAllUserUhs();
-        UserUh GetUserUh(Guid id);
-        UserUh AddUserUh(UserUh userUh);
-        UserUh UpdateUserUh(UserUh userUh);
-        UserUh DeleteUserUh(UserUh userUh);
-        IList<UserUh> GetOwnedUserUhs(string uid);
+        Task<IList<UserUh>> GetAllUserUhsAsync();
+        Task<UserUh> GetUserUhAsync(Guid id);
+        Task<UserUh> AddUserUhAsync(UserUh userUh);
+        Task<UserUh> UpdateUserUhAsync(UserUh userUh);
+        Task<UserUh> DeleteUserUhAsync(UserUh userUh);
         Task<List<UserUh>> GetOwnedUserUhsAsync(string uid);
-        Task<UserUh> DeleteAllUserUh(string uid);
+        Task<UserUh> DeleteAllUserUhAsync(string uid);
     }
     public class UserUhService : IUserUhService
     {
@@ -29,39 +28,72 @@ namespace FormacaoDGR.Areas.Identity.Services
             _db = context;
             _ServiceScopeFactory = serviceScopeFactory;
         }
-        public IList<UserUh> GetAllUserUhs()
+        public async Task<IList<UserUh>> GetAllUserUhsAsync()
         {
-            IList<UserUh> userUhsList = _db.UsersUhs.ToList();
-            return userUhsList;
-        }
-        public UserUh GetUserUh(Guid id)
-        {
-            UserUh userUh = _db.UsersUhs.Find(id);
-            return userUh;
-        }
-        public UserUh AddUserUh(UserUh userUh)
-        {
-            _db.UsersUhs.Add(userUh);
-            _db.SaveChanges();
-            return userUh;
-        }
-        public UserUh UpdateUserUh(UserUh userUh)
-        {
-            _db.Entry(userUh).State = EntityState.Modified;
-            _db.SaveChanges();
-            return userUh;
-        }
-        public UserUh DeleteUserUh(UserUh userUh)
-        {
-            _db.UsersUhs.Remove(userUh);
-            _db.SaveChanges();
-            return userUh;
+            try
+            {
+                IList<UserUh> userUhsList = await _db.UsersUhs.ToListAsync();
+                return userUhsList;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
-        public IList<UserUh> GetOwnedUserUhs(string uid)
+        public async Task<UserUh> GetUserUhAsync(Guid id)
         {
-            IList<UserUh> userUhsList = _db.UsersUhs.Where(i => i.UserId == uid).Include(u=>u.Uh).ToList();
-            return userUhsList;
+            try
+            {
+                UserUh userUh = await _db.UsersUhs.FindAsync(id);
+                return userUh;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<UserUh> AddUserUhAsync(UserUh userUh)
+        {
+            try
+            {
+                _ = _db.UsersUhs.Add(userUh);
+                _ = await _db.SaveChangesAsync();
+                return userUh;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<UserUh> UpdateUserUhAsync(UserUh userUh)
+        {
+            try
+            {
+                _ = _db.Entry(userUh).State = EntityState.Modified;
+                _ = await _db.SaveChangesAsync();
+                return userUh;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<UserUh> DeleteUserUhAsync(UserUh userUh)
+        {
+            try
+            {
+                _ = _db.UsersUhs.Remove(userUh);
+                _ = await _db.SaveChangesAsync();
+                return userUh;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public async Task<List<UserUh>> GetOwnedUserUhsAsync(string uid)
@@ -74,7 +106,7 @@ namespace FormacaoDGR.Areas.Identity.Services
             return userUhsList;
         }
 
-        public async Task<UserUh> DeleteAllUserUh(string uid)
+        public async Task<UserUh> DeleteAllUserUhAsync(string uid)
         {
             IList<UserUh> userUhsList = await _db.UsersUhs.Where(i => i.UserId == uid).ToListAsync();
             foreach (var userUhs in userUhsList)

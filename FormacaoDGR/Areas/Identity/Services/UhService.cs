@@ -1,19 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
-using FormacaoDGR.Areas.Identity.Models;
+﻿using FormacaoDGR.Areas.Identity.Models;
 using FormacaoDGR.Data;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading.Tasks;
 
 namespace FormacaoDGR.Areas.Identity.Services
 {
     public interface IUhService
     {
-        IList<Uh> GetAllUhs();
-        Uh GetUh(Guid id);
-        Uh AddUh(Uh uh);
-        Uh UpdateUh(Uh uh);
-        Uh DeleteUh(Uh uh);
+        Task<IList<Uh>> GetAllUhsAsync();
+        Task<Uh> GetUhAsync(Guid id);
+        Task<Uh> AddUhAsync(Uh uh);
+        Task<Uh> UpdateUhAsync(Uh uh);
+        Task<Uh> DeleteUhAsync(Uh uh);
     }
 
     public class UhService : IUhService
@@ -25,39 +25,72 @@ namespace FormacaoDGR.Areas.Identity.Services
             _db = context;
         }
 
-        public IList<Uh> GetAllUhs()
+        public async Task<IList<Uh>> GetAllUhsAsync()
         {
-            IList<Uh> uhs = _db.Uhs.ToList();
-            return uhs;
+            try
+            {
+                IList<Uh> uhs = await _db.Uhs.ToListAsync();
+                return uhs;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
-        public Uh GetUh(Guid id)
+        public async Task<Uh> GetUhAsync(Guid id)
         {
-            Uh uh = _db.Uhs.Find(id);
-            return uh;
+            try
+            {
+                Uh uh = await _db.Uhs.FindAsync(id);
+                return uh;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
-        public Uh AddUh(Uh uh)
+        public async Task<Uh> AddUhAsync(Uh uh)
         {
-            _db.Uhs.Add(uh);
-            _db.SaveChanges();
-            return uh;
+            try
+            {
+                _ = _db.Uhs.Add(uh);
+                _ = await _db.SaveChangesAsync();
+                return uh;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
-        public Uh UpdateUh(Uh uh)
+        public async Task<Uh> UpdateUhAsync(Uh uh)
         {
-            //_db.Uhs.Update(uh);
-            _db.Entry(uh).State = EntityState.Modified;
-            _db.SaveChanges();
-            return uh;
+            try
+            {
+                _ = _db.Entry(uh).State = EntityState.Modified;
+                _ = await _db.SaveChangesAsync();
+                return uh;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
-        public Uh DeleteUh(Uh uh)
+        public async Task<Uh> DeleteUhAsync(Uh uh)
         {
-            _db.Uhs.Remove(uh);
-            _db.SaveChanges();
-            return uh;
+            try
+            {
+                _ = _db.Uhs.Remove(uh);
+                _ = await _db.SaveChangesAsync();
+                return uh;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
-
     }
 }

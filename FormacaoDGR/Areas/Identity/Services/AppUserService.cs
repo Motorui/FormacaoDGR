@@ -1,19 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
-using FormacaoDGR.Areas.Identity.Models;
+﻿using FormacaoDGR.Areas.Identity.Models;
 using FormacaoDGR.Data;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading.Tasks;
 
 namespace FormacaoDGR.Areas.Identity.Services
 {
     public interface IAppUserService
     {
-        IList<ApplicationUser> GetAllUsers();
-        ApplicationUser GetUser(string id);
-        ApplicationUser AddUser(ApplicationUser appUser);
-        ApplicationUser UpdateUser(ApplicationUser appUser);
-        ApplicationUser DeleteUser(ApplicationUser appUser);
+        Task<IList<ApplicationUser>> GetAllUsersAsync();
+        Task<ApplicationUser> GetUserAsync(string id);
+        Task<ApplicationUser> AddUserAsync(ApplicationUser appUser);
+        Task<ApplicationUser> UpdateUserAsync(ApplicationUser appUser);
+        Task<ApplicationUser> DeleteUserAsync(ApplicationUser appUser);
     }
     public class AppUserService : IAppUserService
     {
@@ -24,39 +24,74 @@ namespace FormacaoDGR.Areas.Identity.Services
             _db = context;
         }
 
-        public IList<ApplicationUser> GetAllUsers()
+        public async Task<IList<ApplicationUser>> GetAllUsersAsync()
         {
-            IList<ApplicationUser> usersList = _db.ApplicationUsers
-                .Include(r => r.ApplicationUserRoles)
-                .Include(u=>u.UserUhs).ToList();
-            return usersList;
+            try
+            {
+                IList<ApplicationUser> usersList = await _db.ApplicationUsers
+                    .Include(r => r.ApplicationUserRoles)
+                    .Include(u => u.UserUhs).ToListAsync();
+                return usersList;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
-        public ApplicationUser GetUser(string id)
+        public async Task<ApplicationUser> GetUserAsync(string id)
         {
-            ApplicationUser appUser = _db.ApplicationUsers.Find(id);
-            return appUser;
+            try
+            {
+                ApplicationUser appUser = await _db.ApplicationUsers.FindAsync(id);
+                return appUser;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
-        public ApplicationUser AddUser(ApplicationUser appUser)
+        public async Task<ApplicationUser> AddUserAsync(ApplicationUser appUser)
         {
-            _db.ApplicationUsers.Add(appUser);
-            _db.SaveChanges();
-            return appUser;
+            try
+            {
+                _ = _db.ApplicationUsers.Add(appUser);
+                _ = await _db.SaveChangesAsync();
+                return appUser;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
-        public ApplicationUser UpdateUser(ApplicationUser appUser)
+        public async Task<ApplicationUser> UpdateUserAsync(ApplicationUser appUser)
         {
-            _db.Entry(appUser).State = EntityState.Modified;
-            _db.SaveChanges();
-            return appUser;
+            try
+            {
+                _ = _db.Entry(appUser).State = EntityState.Modified;
+                _ = await _db.SaveChangesAsync();
+                return appUser;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
-        public ApplicationUser DeleteUser(ApplicationUser appUser)
+        public async Task<ApplicationUser> DeleteUserAsync(ApplicationUser appUser)
         {
-            _db.ApplicationUsers.Remove(appUser);
-            _db.SaveChanges();
-            return appUser;
+            try
+            {
+                _ = _db.ApplicationUsers.Remove(appUser);
+                _ = await _db.SaveChangesAsync();
+                return appUser;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
     }
 }

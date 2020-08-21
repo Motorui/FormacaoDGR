@@ -1,21 +1,20 @@
-﻿using Microsoft.EntityFrameworkCore;
-using FormacaoDGR.Areas.Identity.Models;
+﻿using FormacaoDGR.Areas.Identity.Models;
 using FormacaoDGR.Data;
-using System;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading.Tasks;
 
 namespace FormacaoDGR.Areas.Identity.Services
 {
     public interface IAppUserRoleService
     {
-        IList<ApplicationUserRole> GetAllUserRoles();
-        ApplicationUserRole GetUserRole(string id);
-        ApplicationUserRole AddUserRole(ApplicationUserRole appUserRole);
-        ApplicationUserRole UpdateUserRole(ApplicationUserRole appUserRole);
-        ApplicationUserRole DeleteUserRole(ApplicationUserRole appUserRole);
-        ApplicationUserRole DeleteAllUserRoles(string uid);
+        Task<IList<ApplicationUserRole>> GetAllUserRolesAsync();
+        Task<ApplicationUserRole> GetUserRoleAsync(string id);
+        Task<ApplicationUserRole> AddUserRoleAsync(ApplicationUserRole appUserRole);
+        Task<ApplicationUserRole> UpdateUserRoleAsync(ApplicationUserRole appUserRole);
+        Task<ApplicationUserRole> DeleteUserRoleAsync(ApplicationUserRole appUserRole);
+        Task<ApplicationUserRole> DeleteAllUserRolesAsync(string uid);
     }
 
     public class AppUserRoleService : IAppUserRoleService
@@ -26,45 +25,92 @@ namespace FormacaoDGR.Areas.Identity.Services
         {
             _db = context;
         }
-        public IList<ApplicationUserRole> GetAllUserRoles()
-        {
-            IList<ApplicationUserRole> userRolesList = _db.ApplicationUserRoles.ToList();
-            return userRolesList;
-        }
-        public ApplicationUserRole GetUserRole(string id)
-        {
-            ApplicationUserRole appUserRole = _db.ApplicationUserRoles.Where(i => i.UserId == id).FirstOrDefault();
-            return appUserRole;
-        }
-        public ApplicationUserRole AddUserRole(ApplicationUserRole appUserRole)
-        {
-            _db.ApplicationUserRoles.Add(appUserRole);
-            _db.SaveChanges();
-            return appUserRole;
-        }
-        public ApplicationUserRole UpdateUserRole(ApplicationUserRole appUserRole)
-        {
-            _db.Entry(appUserRole).State = EntityState.Modified;
-            _db.SaveChanges();
-            return appUserRole;
-        }
-        public ApplicationUserRole DeleteUserRole(ApplicationUserRole appUserRole)
-        {
-            _db.ApplicationUserRoles.Remove(appUserRole);
-            _db.SaveChanges();
-            return appUserRole;
-        }
 
-        public ApplicationUserRole DeleteAllUserRoles(string uid)
+        public async Task<IList<ApplicationUserRole>> GetAllUserRolesAsync()
         {
-            IList<ApplicationUserRole> userRolesList = _db.ApplicationUserRoles.Where(i => i.UserId == uid).ToList();
-            foreach (var userRoles in userRolesList)
+            try
             {
-                _db.ApplicationUserRoles.Remove(userRoles);
+                IList<ApplicationUserRole> userRolesList = await _db.ApplicationUserRoles.ToListAsync();
+                return userRolesList;
             }
-            _db.SaveChanges();
+            catch (System.Exception)
+            {
+                throw;
+            }
+        }
 
-            return null;
+        public async Task<ApplicationUserRole> GetUserRoleAsync(string id)
+        {
+            try
+            {
+                ApplicationUserRole appUserRole = await _db.ApplicationUserRoles.Where(i => i.UserId == id).FirstOrDefaultAsync();
+                return appUserRole;
+            }
+            catch (System.Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<ApplicationUserRole> AddUserRoleAsync(ApplicationUserRole appUserRole)
+        {
+            try
+            {
+                _ = _db.ApplicationUserRoles.Add(appUserRole);
+                _ = await _db.SaveChangesAsync();
+                return appUserRole;
+            }
+            catch (System.Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<ApplicationUserRole> UpdateUserRoleAsync(ApplicationUserRole appUserRole)
+        {
+            try
+            {
+                _ = _db.Entry(appUserRole).State = EntityState.Modified;
+                _ = await _db.SaveChangesAsync();
+                return appUserRole;
+            }
+            catch (System.Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<ApplicationUserRole> DeleteUserRoleAsync(ApplicationUserRole appUserRole)
+        {
+            try
+            {
+                _ = _db.ApplicationUserRoles.Remove(appUserRole);
+                _ = await _db.SaveChangesAsync();
+                return appUserRole;
+            }
+            catch (System.Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<ApplicationUserRole> DeleteAllUserRolesAsync(string uid)
+        {
+            try
+            {
+                IList<ApplicationUserRole> userRolesList = await _db.ApplicationUserRoles.Where(i => i.UserId == uid).ToListAsync();
+                foreach (var userRoles in userRolesList)
+                {
+                    _db.ApplicationUserRoles.Remove(userRoles);
+                }
+                _ = await _db.SaveChangesAsync();
+
+                return null;
+            }
+            catch (System.Exception)
+            {
+                throw;
+            }
         }
     }
 }

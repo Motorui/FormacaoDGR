@@ -1,8 +1,7 @@
 ﻿@using FormacaoDGR.Data.Models
 @using FormacaoDGR.Data.Services
-@using Syncfusion.Blazor.Notifications
-@using Syncfusion.Blazor.Buttons
 
+@inject Sotsera.Blazor.Toaster.IToaster Toaster
 @inject IEmpresaService _empresaService
 @inject IJSRuntime _jsRuntime
 
@@ -24,47 +23,23 @@
                         <InputText id="name" class="form-control" @bind-Value="@ModelEmpresa.Nome" />
                         <ValidationMessage For="@(() => ModelEmpresa.Nome)" />
                     </div>
-                    <SfButton IconCss="e-icons e-ok" CssClass="e-success" HtmlAttributes="@uhMBtnConfig("submit","Gravar","")"
-                              IconPosition="IconPosition.Left">Submeter</SfButton>
-                    <SfButton IconCss="e-icons e-back" CssClass="e-warning" HtmlAttributes="@uhMBtnConfig("button","Voltar","modal")"
-                              IconPosition="IconPosition.Left">Cancelar</SfButton>
+                    <span data-toggle="tooltip" data-placement="top" title="Gravar">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <span class="oi oi-hard-drive"></span> Submeter
+                        </button>
+                    </span>
+                    <span data-toggle="tooltip" data-placement="top" title="Fechar">
+                        <button type="button" class="btn btn-warning btn-sm" data-dismiss="modal">
+                            <span class="oi oi-hard-drive"></span> Cancelar
+                        </button>
+                    </span>
                 </EditForm>
             </div>
         </div>
     </div>
 </div>
 
-<SfToast @ref="ToastObj" Title="@ToastTitle" Content="@ToastContent" CssClass="@ToastCssClass">
-    <ToastPosition X="Center" Y="Top"></ToastPosition>
-</SfToast>
-
 @code {
-    private Dictionary<string, object> uhMBtnConfig(string type, string title, string ddismiss)
-    {
-        var btn = new Dictionary<string, object>()
-    {
-            {"type", type},
-            { "title", title},
-            { "data-dismiss", ddismiss}
-        };
-        return btn;
-    }
-
-    SfToast ToastObj;
-
-
-    private string ToastTitle = "";
-    private string ToastContent = "";
-    private string ToastCssClass = "";
-    private string ToastIcon = "";
-
-    private ToastOption[] Toasts = new ToastOption[]
-    {
-        new ToastOption{ Title = "Sucesso!", Content="Empresa criada com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
-        new ToastOption{ Title = "Sucesso!", Content="Empresa editada com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
-        new ToastOption{ Title = "Sucesso!", Content="Empresa apagada com sucesso.", CssClass="e-toast-info", Icon="e-info toast-icons" }
-        };
-
     [Parameter]
     public Empresa ModelEmpresa { get; set; }
 
@@ -79,35 +54,20 @@
         if (ModelEmpresa.ID == Guid.Empty)
         {
             await _empresaService.AddEmpresaAsync(ModelEmpresa);
-            ShowMsg(0);
+
+            await Task.Delay(100);
+            Toaster.Success("Empresa adicionada com sucesso", "Sucesso!");
         }
         else
         {
             await _empresaService.UpdateEmpresaAsync(ModelEmpresa);
-            ShowMsg(1);
+
+            await Task.Delay(100);
+            Toaster.Success("Empresa editada com sucesso", "Sucesso!");
         }
 
         await CloseEmpresaModal("empresaModal");
         DataChanged?.Invoke();
-    }
-
-    private async void ShowMsg(int msg)
-    {
-        this.ToastTitle = this.Toasts[msg].Title;
-        this.ToastContent = this.Toasts[msg].Content;
-        this.ToastCssClass = this.Toasts[msg].CssClass;
-        this.ToastIcon = this.Toasts[msg].Icon;
-
-        await Task.Delay(100);
-        await this.ToastObj.Show();
-    }
-
-    private class ToastOption
-    {
-        public string Title { get; set; }
-        public string Content { get; set; }
-        public string CssClass { get; set; }
-        public string Icon { get; set; }
     }
 
     private async Task CloseEmpresaModal(string modalId)

@@ -1,20 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
-using FormacaoDGR.Areas.Identity.Models;
+﻿using FormacaoDGR.Areas.Identity.Models;
 using FormacaoDGR.Data;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-
+using System.Threading.Tasks;
 
 namespace FormacaoDGR.Areas.Identity.Services
 {
     public interface IAppRoleService
     {
-        IList<ApplicationRole> GetAllRoles();
-        ApplicationRole GetRole(Guid id);
-        ApplicationRole AddRole(ApplicationRole appRole);
-        ApplicationRole UpdateRole(ApplicationRole appRole);
-        ApplicationRole DeleteRole(ApplicationRole appRole);
+        Task<IList<ApplicationRole>> GetAllRolesAsync();
+        Task<ApplicationRole> GetRoleAsync(Guid id);
+        Task<ApplicationRole> AddRoleAsync(ApplicationRole appRole);
+        Task<ApplicationRole> UpdateRoleAsync(ApplicationRole appRole);
+        Task<ApplicationRole> DeleteRoleAsync(ApplicationRole appRole);
     }
 
     public class AppRoleService : IAppRoleService
@@ -26,33 +25,72 @@ namespace FormacaoDGR.Areas.Identity.Services
             _db = context;
         }
 
-        public IList<ApplicationRole> GetAllRoles()
+        public async Task<IList<ApplicationRole>> GetAllRolesAsync()
         {
-            IList<ApplicationRole> rolesList = _db.ApplicationRoles.ToList();
-            return rolesList;
+            try
+            {
+                IList<ApplicationRole> rolesList = await _db.ApplicationRoles.ToListAsync();
+                return rolesList;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
-        public ApplicationRole GetRole(Guid id)
+
+        public async Task<ApplicationRole> GetRoleAsync(Guid id)
         {
-            ApplicationRole appRole = _db.ApplicationRoles.Find(id);
-            return appRole;
+            try
+            {
+                ApplicationRole appRole = await _db.ApplicationRoles.FindAsync(id);
+                return appRole;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
-        public ApplicationRole AddRole(ApplicationRole appRole)
+
+        public async Task<ApplicationRole> AddRoleAsync(ApplicationRole appRole)
         {
-            _db.ApplicationRoles.Add(appRole);
-            _db.SaveChanges();
-            return appRole;
+            try
+            {
+                _ = _db.ApplicationRoles.Add(appRole);
+                _ = await _db.SaveChangesAsync();
+                return appRole;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
-        public ApplicationRole UpdateRole(ApplicationRole appRole)
+
+        public async Task<ApplicationRole> UpdateRoleAsync(ApplicationRole appRole)
         {
-            _db.Entry(appRole).State = EntityState.Modified;
-            _db.SaveChanges();
-            return appRole;
+            try
+            {
+                _ = _db.Entry(appRole).State = EntityState.Modified;
+                _ = await _db.SaveChangesAsync();
+                return appRole;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
-        public ApplicationRole DeleteRole(ApplicationRole appRole)
+
+        public async Task<ApplicationRole> DeleteRoleAsync(ApplicationRole appRole)
         {
-            _db.ApplicationRoles.Remove(appRole);
-            _db.SaveChanges();
-            return appRole;
+            try
+            {
+                _ = _db.ApplicationRoles.Remove(appRole);
+                _ = await _db.SaveChangesAsync();
+                return appRole;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
     }
 }

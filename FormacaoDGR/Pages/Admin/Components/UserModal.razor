@@ -1,10 +1,10 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using FormacaoDGR.Areas.Identity.Models
 @using FormacaoDGR.Areas.Identity.Services
-@using Syncfusion.Blazor.Notifications
-@using Syncfusion.Blazor.Buttons
-@using Syncfusion.Blazor.DropDowns
+@using FormacaoDGR.Pages.Helpers
+@using FormacaoDGR.Pages.Components
 
+@inject Sotsera.Blazor.Toaster.IToaster Toaster
 @inject UserManager<ApplicationUser> _UserManager
 @inject IAppUserService _appUserService
 @inject IAppRoleService _appRoleService
@@ -43,21 +43,30 @@
                     </div>
                     <div class="form-group">
                         <label for="Role">Tipo</label>
-                        <SfDropDownList TValue="string" TItem="ApplicationRole" @bind-Value="@OwnedRoleId"
-                                        PopupHeight="230px" Placeholder="Selecionar Tipo" DataSource="@AllRoles">
-                            <DropDownListFieldSettings Text="Name" Value="Id"></DropDownListFieldSettings>
-                        </SfDropDownList>
+                        <InputSelect id="category" class="form-control" @bind-Value="OwnedRoleId">
+                            <option value="">Select</option>
+                            @foreach (var role in AllRoles)
+                            {
+                                <option value="@role.Id">
+                                    @role.Name
+                                </option>
+                            }
+                        </InputSelect>
                     </div>
                     <div class="form-group">
                         <label for="Uhs">UH's</label>
-                        <SfMultiSelect TValue="Guid[]" Placeholder="Selecionar UH's" @bind-Value="@OwnedUhs" DataSource="@AllModalUhs">
-                            <MultiSelectFieldSettings Text="UhIATA" Value="UhID"></MultiSelectFieldSettings>
-                        </SfMultiSelect>
+                        <MultipleSelector Selected="Selected" NoSelected="NotSelected"></MultipleSelector>
                     </div>
-                    <SfButton IconCss="e-icons e-ok" CssClass="e-success" HtmlAttributes="@uhMBtnConfig("submit", "Gravar", "")"
-                              IconPosition="IconPosition.Left">Submeter</SfButton>
-                    <SfButton IconCss="e-icons e-back" CssClass="e-warning" HtmlAttributes="@uhMBtnConfig("button", "Voltar", "modal")"
-                              IconPosition="IconPosition.Left">Cancelar</SfButton>
+                    <span data-toggle="tooltip" data-placement="top" title="Gravar">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <span class="oi oi-hard-drive"></span> Submeter
+                        </button>
+                    </span>
+                    <span data-toggle="tooltip" data-placement="top" title="Fechar">
+                        <button type="button" class="btn btn-warning btn-sm" data-dismiss="modal">
+                            <span class="oi oi-hard-drive"></span> Cancelar
+                        </button>
+                    </span>
                 </EditForm>
                 <p>
                     <span style="color:red">@strError</span>
@@ -66,10 +75,6 @@
         </div>
     </div>
 </div>
-
-<SfToast @ref="ToastObj" Title="@ToastTitle" Content="@ToastContent" CssClass="@ToastCssClass">
-    <ToastPosition X="Center" Y="Top"></ToastPosition>
-</SfToast>
 
 @code {
     [Parameter]
@@ -95,23 +100,32 @@
     // To hold any possible errors
     string strError = "";
 
-    protected override void OnInitialized()
+    [Parameter] public List<Uh> SelectedUhs { get; set; } = new List<Uh>();
+    [Parameter] public List<Uh> NotSelectedUhs { get; set; } = new List<Uh>();
+
+    private List<MultipleSelectorModel> Selected = new List<MultipleSelectorModel>();
+    private List<MultipleSelectorModel> NotSelected = new List<MultipleSelectorModel>();
+
+    protected override async Task OnInitializedAsync()
     {
-        AllModalUhs = _uhService.GetAllUhs();
-        AllRoles = _appRoleService.GetAllRoles();
+        AllModalUhs = await _uhService.GetAllUhsAsync();
+        AllRoles = await _appRoleService.GetAllRolesAsync();
+
+        Selected = SelectedUhs.Select(x => new MultipleSelectorModel(x.UhID.ToString(), x.UhNome)).ToList();
+        NotSelected = NotSelectedUhs.Select(x => new MultipleSelectorModel(x.UhID.ToString(), x.UhNome)).ToList();
     }
 
-    protected override void OnParametersSet()
+    protected override async void OnParametersSet()
     {
-        FillOwnedList(ModelUser.Id);
+        await FillOwnedList(ModelUser.Id);
     }
 
-    private void FillOwnedList(string uid)
+    private async Task FillOwnedList(string uid)
     {
-        ownedUhList = _userUhService.GetOwnedUserUhs(uid);
+        ownedUhList = await _userUhService.GetOwnedUserUhsAsync(uid);
         OwnedUhs = ownedUhList.Select(i => i.Uh.UhID).ToArray();
 
-        ownedRole = _appUserRoleService.GetUserRole(uid);
+        ownedRole = await _appUserRoleService.GetUserRoleAsync(uid);
         if (ownedRole != null)
         {
             OwnedRoleId = ownedRole.RoleId;
@@ -184,8 +198,8 @@
                 }
                 else
                 {
-                    await _userUhService.DeleteAllUserUh(ModelUser.Id);
-                    _appUserRoleService.DeleteAllUserRoles(ModelUser.Id);
+                    await _userUhService.DeleteAllUserUhAsync(ModelUser.Id);
+                    await _appUserRoleService.DeleteAllUserRolesAsync(ModelUser.Id);
 
                     if (OwnedUhs != null)
                     {
@@ -196,7 +210,7 @@
                                 UhID = ownedUh,
                                 UserId = user.Id
                             };
-                            _userUhService.AddUserUh(itemUserUh);
+                            await _userUhService.AddUserUhAsync(itemUserUh);
                         }
                     }
 
@@ -207,11 +221,12 @@
                             RoleId = OwnedRoleId,
                             UserId = user.Id
                         };
-                        _appUserRoleService.AddUserRole(itemUserRole);
+                        await _appUserRoleService.AddUserRoleAsync(itemUserRole);
                     }
                 }
 
-                ShowMsg(1);
+                await Task.Delay(100);
+                Toaster.Success("Utilizador editado com sucesso", "Sucesso!");
 
             }
             else
@@ -250,7 +265,7 @@
                                 UhID = ownedUh,
                                 UserId = NewUser.Id
                             };
-                            _userUhService.AddUserUh(itemUserUh);
+                            await _userUhService.AddUserUhAsync(itemUserUh);
                         }
                     }
 
@@ -261,11 +276,12 @@
                             RoleId = OwnedRoleId,
                             UserId = NewUser.Id
                         };
-                        _appUserRoleService.AddUserRole(itemUserRole);
+                        await _appUserRoleService.AddUserRoleAsync(itemUserRole);
                     }
                 }
 
-                ShowMsg(0);
+                await Task.Delay(100);
+                Toaster.Success("Utilizador adicionado com sucesso", "Sucesso!");
             }
 
             await CloseUserModal("userModal");
@@ -277,54 +293,9 @@
         }
     }
 
-    private async void ShowMsg(int msg)
-    {
-        this.ToastTitle = this.Toasts[msg].Title;
-        this.ToastContent = this.Toasts[msg].Content;
-        this.ToastCssClass = this.Toasts[msg].CssClass;
-        this.ToastIcon = this.Toasts[msg].Icon;
-
-        await Task.Delay(100);
-        await this.ToastObj.Show();
-    }
-
     private async Task CloseUserModal(string modalId)
     {
         await _jsRuntime.InvokeAsync<object>("global.closeModal", modalId);
     }
-
-    private Dictionary<string, object> uhMBtnConfig(string type, string title, string ddismiss)
-    {
-        var btn = new Dictionary<string, object>()
-{
-            {"type", type},
-            { "title", title},
-            { "data-dismiss", ddismiss}
-        };
-
-        return btn;
-    }
-
-    SfToast ToastObj;
-
-    private string ToastTitle = "";
-    private string ToastContent = "";
-    private string ToastCssClass = "";
-    private string ToastIcon = "";
-
-    private class ToastOption
-    {
-        public string Title { get; set; }
-        public string Content { get; set; }
-        public string CssClass { get; set; }
-        public string Icon { get; set; }
-    }
-
-    private ToastOption[] Toasts = new ToastOption[]
-    {
-        new ToastOption{ Title = "Sucesso!", Content="Utilizador criado com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
-        new ToastOption{ Title = "Sucesso!", Content="Utilizador editado com sucesso.", CssClass="e-toast-success", Icon="e-success toast-icons" },
-        new ToastOption{ Title = "Sucesso!", Content="Utilizador apagado com sucesso.", CssClass="e-toast-info", Icon="e-info toast-icons" }
-        };
 
 }
