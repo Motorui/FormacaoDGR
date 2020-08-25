@@ -16,7 +16,7 @@ namespace FormacaoDGR.Areas.Identity.Services
         Task<UserUh> AddUserUhAsync(UserUh userUh);
         Task<UserUh> UpdateUserUhAsync(UserUh userUh);
         Task<UserUh> DeleteUserUhAsync(UserUh userUh);
-        Task<List<UserUh>> GetOwnedUserUhsAsync(string uid);
+        Task<List<Guid>> GetOwnedUserUhsAsync(string uid);
         Task<UserUh> DeleteAllUserUhAsync(string uid);
     }
     public class UserUhService : IUserUhService
@@ -96,11 +96,10 @@ namespace FormacaoDGR.Areas.Identity.Services
             }
         }
 
-        public async Task<List<UserUh>> GetOwnedUserUhsAsync(string uid)
+        public async Task<List<Guid>> GetOwnedUserUhsAsync(string uid)
         {
-            var userUhsList = await _db.UsersUhs
-                .Include(u=>u.Uh)
-                .Where(i => i.UserId == uid)
+            List<Guid> userUhsList = await _db.UsersUhs
+                .Where(i => i.UserId == uid).Select(x => x.UhID)
                 .ToListAsync();
 
             return userUhsList;

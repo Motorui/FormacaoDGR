@@ -1,11 +1,13 @@
 ﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components
+@using System.Collections.Generic
 @using FormacaoDGR.Areas.Identity.Models
 @using FormacaoDGR.Areas.Identity.Services
-@using FormacaoDGR.Pages.Helpers
-@using FormacaoDGR.Pages.Components
+@using FormacaoDGR.Components
+
+@inherits OwningComponentBase<UserManager<ApplicationUser>>
 
 @inject Sotsera.Blazor.Toaster.IToaster Toaster
-@inject UserManager<ApplicationUser> _UserManager
 @inject IAppUserService _appUserService
 @inject IAppRoleService _appRoleService
 @inject IAppUserRoleService _appUserRoleService
@@ -55,7 +57,11 @@
                     </div>
                     <div class="form-group">
                         <label for="Uhs">UH's</label>
-                        <MultipleSelector Selected="Selected" NoSelected="NotSelected"></MultipleSelector>
+                        @if (SelectedIds != null)
+                        {
+                            <CheckBoxList Data="@UhList" TextField="@((item)=>item.UhNome)"
+                                          ValueField="@((item)=>item.UhID)" SelectedValues="@SelectedIds" />
+                        }
                     </div>
                     <span data-toggle="tooltip" data-placement="top" title="Gravar">
                         <button type="submit" class="btn btn-success btn-sm">
@@ -77,53 +83,37 @@
 </div>
 
 @code {
-    [Parameter]
-    public ApplicationUser ModelUser { get; set; }
+    [Parameter] public ApplicationUser ModelUser { get; set; }
+    [Parameter] public Action DataChanged { get; set; }
+    [Parameter] public RenderFragment CustomHeader { get; set; }
+    [Parameter] public bool IsEdit { get; set; }
 
-    [Parameter]
-    public Action DataChanged { get; set; }
-
-    [Parameter]
-    public RenderFragment CustomHeader { get; set; }
-
-    [Parameter]
-    public bool IsEdit { get; set; }
-
-    IList<Uh> AllModalUhs = new List<Uh>();
     IList<ApplicationRole> AllRoles = new List<ApplicationRole>();
-
-    IList<UserUh> ownedUhList = new List<UserUh>();
-    public Guid[] OwnedUhs { get; set; } = new Guid[] { };
-
     ApplicationUserRole ownedRole = new ApplicationUserRole();
     public string OwnedRoleId { get; set; } = string.Empty;
-    // To hold any possible errors
+    // Para guardar erros
     string strError = "";
 
-    [Parameter] public List<Uh> SelectedUhs { get; set; } = new List<Uh>();
-    [Parameter] public List<Uh> NotSelectedUhs { get; set; } = new List<Uh>();
-
-    private List<MultipleSelectorModel> Selected = new List<MultipleSelectorModel>();
-    private List<MultipleSelectorModel> NotSelected = new List<MultipleSelectorModel>();
+    public IList<Uh> UhList { get; set; }
+    protected List<Guid> SelectedIds = new List<Guid>();
 
     protected override async Task OnInitializedAsync()
     {
-        AllModalUhs = await _uhService.GetAllUhsAsync();
         AllRoles = await _appRoleService.GetAllRolesAsync();
-
-        Selected = SelectedUhs.Select(x => new MultipleSelectorModel(x.UhID.ToString(), x.UhNome)).ToList();
-        NotSelected = NotSelectedUhs.Select(x => new MultipleSelectorModel(x.UhID.ToString(), x.UhNome)).ToList();
+        UhList = await _uhService.GetAllUhsAsync();
     }
 
-    protected override async void OnParametersSet()
+    protected override void OnParametersSet()
     {
-        await FillOwnedList(ModelUser.Id);
+        string UserID = ModelUser.Id;
+
+       Task.Run(async () => await FillOwnedList(UserID)).Wait();
+
     }
 
     private async Task FillOwnedList(string uid)
     {
-        ownedUhList = await _userUhService.GetOwnedUserUhsAsync(uid);
-        OwnedUhs = ownedUhList.Select(i => i.Uh.UhID).ToArray();
+        SelectedIds = await _userUhService.GetOwnedUserUhsAsync(uid);
 
         ownedRole = await _appUserRoleService.GetUserRoleAsync(uid);
         if (ownedRole != null)
@@ -134,7 +124,6 @@
         {
             OwnedRoleId = string.Empty;
         }
-
     }
 
     private async void HandleValidSubmit()
@@ -144,7 +133,7 @@
             if (IsEdit)
             {
                 // Get the user
-                var user = await _UserManager.FindByIdAsync(ModelUser.Id);
+                var user = await Service.FindByIdAsync(ModelUser.Id);
 
                 // Update the user
                 user.Name = ModelUser.Name;
@@ -158,8 +147,8 @@
                 // is not the default value
                 if (ModelUser.PasswordHash != "*****")
                 {
-                    var resetToken = await _UserManager.GeneratePasswordResetTokenAsync(user);
-                    var passworduser = await _UserManager
+                    var resetToken = await Service.GeneratePasswordResetTokenAsync(user);
+                    var passworduser = await Service
                         .ResetPasswordAsync(
                             user,
                             resetToken,
@@ -181,7 +170,7 @@
                     }
                 }
 
-                var updateResult = await _UserManager.UpdateAsync(user);
+                var updateResult = await Service.UpdateAsync(user);
 
                 if (!updateResult.Succeeded)
                 {
@@ -201,9 +190,9 @@
                     await _userUhService.DeleteAllUserUhAsync(ModelUser.Id);
                     await _appUserRoleService.DeleteAllUserRolesAsync(ModelUser.Id);
 
-                    if (OwnedUhs != null)
+                    if (SelectedIds != null)
                     {
-                        foreach (var ownedUh in OwnedUhs)
+                        foreach (var ownedUh in SelectedIds)
                         {
                             UserUh itemUserUh = new UserUh()
                             {
@@ -240,7 +229,7 @@
                     Email = ModelUser.UserName,
                     NormalizedEmail = ModelUser.UserName.ToUpper()
                 };
-                var CreateResult = await _UserManager.CreateAsync(NewUser, ModelUser.PasswordHash);
+                var CreateResult = await Service.CreateAsync(NewUser, ModelUser.PasswordHash);
                 if (!CreateResult.Succeeded)
                 {
                     if (CreateResult.Errors.FirstOrDefault() != null)
@@ -256,9 +245,9 @@
                 }
                 else
                 {
-                    if (OwnedUhs != null)
+                    if (SelectedIds != null)
                     {
-                        foreach (var ownedUh in OwnedUhs)
+                        foreach (var ownedUh in SelectedIds)
                         {
                             UserUh itemUserUh = new UserUh()
                             {
