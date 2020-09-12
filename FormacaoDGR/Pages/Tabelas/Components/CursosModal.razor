@@ -1,0 +1,114 @@
+﻿@using FormacaoDGR.Data.Models
+@using FormacaoDGR.Data.Services
+
+@inject Sotsera.Blazor.Toaster.IToaster Toaster
+@inject ICursoService _cursoService
+@inject IJSRuntime _jsRuntime
+
+<Modal @ref="@CursoModal" role="dialog" id="cursoModal">
+    <ModalBackdrop />
+    <ModalContent Centered="true" Size="ModalSize.ExtraLarge">
+        <ModalHeader>
+            <ModalTitle>@CustomHeader</ModalTitle>
+            <CloseButton Clicked="@(() => CloseCursoModal("cursoModal"))" />
+        </ModalHeader>
+        <EditForm Model="@ModelCurso" OnValidSubmit="@HandleValidSubmit">
+            <ModalBody>
+                <DataAnnotationsValidator />
+                <input type="hidden" @bind-value="@ModelCurso.ID" />
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is2">Nome</FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is10">
+                        <TextEdit @bind-Text="@ModelCurso.Nome">
+                            <FieldHelp>Inserir nome do curso</FieldHelp>
+                        </TextEdit>
+                        <ValidationMessage For="@(() => ModelCurso.Nome)" />
+                    </FieldBody>
+                </Field>
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is2">Código</FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is10">
+                        <TextEdit @bind-Text="@ModelCurso.Codigo">
+                            <FieldHelp>Inserir código do curso</FieldHelp>
+                        </TextEdit>
+                        <ValidationMessage For="@(() => ModelCurso.Codigo)" />
+                    </FieldBody>
+                </Field>
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is2">Duração</FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is10">
+                        <NumericEdit TValue="int" @bind-Value="@ModelCurso.Duracao">
+                            <FieldHelp>Inserir duração do curso em horas</FieldHelp>
+                        </NumericEdit>
+                        <ValidationMessage For="@(() => ModelCurso.Duracao)" />
+                    </FieldBody>
+                </Field>
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is2">Validade</FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is10">
+                        <NumericEdit TValue="int" @bind-Value="@ModelCurso.Validade">
+                            <FieldHelp>Inserir Validade do curso em anos</FieldHelp>
+                        </NumericEdit>
+                        <ValidationMessage For="@(() => ModelCurso.Validade)" />
+                    </FieldBody>
+                </Field>
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is2">Côr</FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is10">
+                        <ColorEdit @bind-Color="@ModelCurso.Cor">
+                            <FieldHelp>Inserir côr do curso</FieldHelp>
+                        </ColorEdit>
+                        <ValidationMessage For="@(() => ModelCurso.Cor)" />
+                    </FieldBody>
+                </Field>
+            </ModalBody>
+            <ModalFooter>
+                <Tooltip Text="Gravar">
+                    <Button Color="Color.Success" Type="ButtonType.Submit">
+                        <Icon Name="IconName.Save" /> Submeter
+                    </Button>
+                </Tooltip>
+                <Tooltip Text="Fechar">
+                    <Button Color="Color.Warning" Clicked="@(() => CloseCursoModal("cursoModal"))">
+                        <Icon Name="IconName.StepBackward" /> Cancelar
+                    </Button>
+                </Tooltip>
+            </ModalFooter>
+        </EditForm>
+    </ModalContent>
+</Modal>
+
+@code {
+    [Parameter] public Curso ModelCurso { get; set; }
+    [Parameter] public Action DataChanged { get; set; }
+    [Parameter] public RenderFragment CustomHeader { get; set; }
+
+    private Modal CursoModal;
+
+    private async void HandleValidSubmit()
+    {
+        if (ModelCurso.ID == Guid.Empty)
+        {
+            await _cursoService.AddAsync(ModelCurso);
+
+            await Task.Delay(100);
+            Toaster.Success("Curso adicionado com sucesso", "Sucesso!");
+        }
+        else
+        {
+            await _cursoService.UpdateAsync(ModelCurso);
+
+            await Task.Delay(100);
+            Toaster.Success("Curso editado com sucesso", "Sucesso!");
+        }
+
+        await CloseCursoModal("cursoModal");
+        DataChanged?.Invoke();
+    }
+
+    private async Task CloseCursoModal(string modalId)
+    {
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", modalId);
+    }
+
+}

@@ -1,0 +1,198 @@
+﻿@page "/formandosmanager"
+@attribute [Authorize]
+
+@using FormacaoDGR.Data.Models
+@using FormacaoDGR.Data.Services
+@using FormacaoDGR.Pages.Components
+@using FormacaoDGR.Pages.Tabelas.Components
+@using Blazorise.DataGrid
+
+@inject Sotsera.Blazor.Toaster.IToaster Toaster
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IFormandoService _formandoService
+@inject IJSRuntime _jsRuntime
+
+<AuthorizeView Context="authContext">
+    <Authorized>
+        <Container Fluid="true">
+            <Breadcrumb Mode="BreadcrumbMode.Auto">
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="">Início</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="#">Tabelas</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="formandosmanager">Formandos</BreadcrumbLink>
+                </BreadcrumbItem>
+            </Breadcrumb>
+            <Row>
+                <Column ColumnSize="ColumnSize.Is12">
+                    <Card>
+                        <CardBody>
+                            <CardTitle Size="5">Formandos</CardTitle>
+                            <CardText>
+                                @if (AllFormandos == null)
+                                {
+                                    <p><em>Loading...</em></p>
+                                }
+                                else
+                                {
+                                    <DataGrid TItem="Formando" Data="@AllFormandos" @bind-SelectedRow="@modelFormando"
+                                              Filterable="true" Sortable="true" Editable="true" UseInternalEditing="false"
+                                              SelectedRowStyling="@OnSelectedRowStyling"
+                                              ShowPager="true" PageSize="10" Striped="true" Bordered="true" Hoverable="true"
+                                              DetailRowTrigger="@((item)=>item.ID == modelFormando?.ID)">
+                                        <ChildContent>
+                                            <DataGridCommandColumn TItem="Formando">
+                                                <NewCommandTemplate>
+                                                    <Tooltip Text="Criar novo Formando">
+                                                        <Button Color="Color.Success" Clicked="@(() => InitializeFormandoObject())" data-toggle="modal" data-target="#formandoModal">
+                                                            Criar <Icon Name="IconName.Add" />
+                                                        </Button>
+                                                    </Tooltip>
+                                                </NewCommandTemplate>
+                                                <EditCommandTemplate>
+                                                    <Tooltip Text="Editar">
+                                                        <Button Color="Color.Primary" Clicked="@(() => PrepareForEdit(context.Item))" data-toggle="modal" data-target="#formandoModal">
+                                                            <Icon Name="IconName.Pen" />
+                                                        </Button>
+                                                    </Tooltip>
+                                                </EditCommandTemplate>
+                                                <DeleteCommandTemplate>
+                                                    <Tooltip Text="Apagar Empresa">
+                                                        <Button Color="Color.Danger" Clicked="@(() => PrepareForDelete(context.Item))" data-toggle="modal" data-target="#confirmDeleteModal">
+                                                            <Icon Name="IconName.Delete" />
+                                                        </Button>
+                                                    </Tooltip>
+                                                </DeleteCommandTemplate>
+                                                <ClearFilterCommandTemplate>
+                                                    <Button Color="Color.Light" Clicked="@context.Clicked">
+                                                        <Icon Name="IconName.Clear" />
+                                                    </Button>
+                                                </ClearFilterCommandTemplate>
+                                            </DataGridCommandColumn>
+                                            <DataGridColumn TItem="Formando" Field="@nameof(Formando.Nome)" Caption="Nome" Sortable="true" />
+                                            <DataGridColumn TItem="Formando" Field="@nameof(Formando.Interno)" Caption="Interno?" Sortable="true">
+                                                <DisplayTemplate>
+                                                    @(context.Interno ? "Interno" : "Externo")
+                                                </DisplayTemplate>
+                                            </DataGridColumn>
+                                            <DataGridColumn TItem="Formando" Field="@nameof(Formando.EmpresaID)" Caption="Empresa" Sortable="true">
+                                                <DisplayTemplate>
+                                                    @($"{(context as Formando)?.Empresa.Nome}")
+                                                </DisplayTemplate>
+                                            </DataGridColumn>
+                                            <DataGridColumn TItem="Formando" Field="@nameof(Formando.DepartamentoID)" Caption="Departamento" Sortable="true">
+                                                <DisplayTemplate>
+                                                    @($"{(context as Formando)?.Departamento.Nome}")
+                                                </DisplayTemplate>
+                                            </DataGridColumn>
+                                        </ChildContent>
+                                        <EmptyTemplate>
+                                            <div class="box">
+                                                Não foram encontrados formandos na base de dados
+                                            </div>
+                                        </EmptyTemplate>
+                                        <LoadingTemplate>
+                                            <div class="box">
+                                                <progress class="progress is-small is-primary" max="100" />
+                                            </div>
+                                        </LoadingTemplate>
+                                        <DetailRowTemplate>
+                                            @{
+                                                <DataGrid TItem="Formando" Data="@AllFormandos.Where(x => x.ID == context.ID)"
+                                                          Editable="false" UseInternalEditing="false"
+                                                          Sortable="false" SelectedRowStyling="@OnSelectedRowStyling">
+                                                    @if (authContext.User.IsInRole("Admins")) //substituir por Admins
+                                                    {
+                                                        <DataGridDateColumn TItem="Formando" Field="@nameof(Empresa.CreatedAt)" Caption="Criado em:" Editable="false" />
+                                                        <DataGridColumn TItem="Formando" Field="@nameof(Empresa.CreatedBy)" Caption="Criado por:" Editable="false" />
+                                                        <DataGridDateColumn TItem="Formando" Field="@nameof(Empresa.LastUpdatedAt)" Caption="Atualizado em:" Editable="false" />
+                                                        <DataGridColumn TItem="Formando" Field="@nameof(Empresa.LastUpdatedBy)" Caption="Atualizado por:" Editable="false" />
+                                                    }
+                                                </DataGrid>
+                                            }
+                                        </DetailRowTemplate>
+                                    </DataGrid>
+                                }
+
+                                <Tooltip Text="Criar novo Formando">
+                                    <Button Color="Color.Success" Clicked="@(() => InitializeFormandoObject())"
+                                            data-toggle="modal" data-target="#formandoModal">
+                                        Criar <Icon Name="IconName.Add" />
+                                    </Button>
+                                </Tooltip>
+                            </CardText>
+                        </CardBody>
+                    </Card>
+                </Column>
+            </Row>
+        </Container>
+
+        <ConfirmDialog OnClick="@Delete" />
+        <FormandosModal ModelFormando="@modelFormando" DataChanged="@DataChanged">
+            <CustomHeader>@customHeader</CustomHeader>
+        </FormandosModal>
+
+    </Authorized>
+    <NotAuthorized>
+        <p>Não está logado.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    IList<Formando> AllFormandos = new List<Formando>();
+    Formando modelFormando = new Formando();
+    string customHeader = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAllFormandos();
+    }
+
+    private void InitializeFormandoObject()
+    {
+        modelFormando = new Formando();
+        customHeader = "Adicionar Formando";
+    }
+
+    private async void DataChanged()
+    {
+        StateHasChanged();
+        await GetAllFormandos();
+    }
+
+    public async Task GetAllFormandos()
+    {
+        AllFormandos = await _formandoService.GetAllAsync();
+    }
+
+    private void PrepareForEdit(Formando formando)
+    {
+        customHeader = "Editar Formando";
+        modelFormando = formando;
+    }
+
+    private void PrepareForDelete(Formando formando)
+    {
+        modelFormando = formando;
+    }
+
+    private async Task Delete()
+    {
+        await _formandoService.DeleteAsync(modelFormando);
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", "confirmDeleteModal");
+
+        AllFormandos = await _formandoService.GetAllAsync();
+        modelFormando = new Formando();
+
+        await Task.Delay(100);
+        Toaster.Error("Formando apagado com sucesso", "Sucesso!");
+    }
+
+    void OnSelectedRowStyling(Formando formando, DataGridRowStyling styling)
+    {
+        styling.Background = Background.Light;
+    }
+}

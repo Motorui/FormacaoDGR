@@ -9,7 +9,7 @@
     <ul class="nav flex-column">
         <li class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
+                <Icon Name="@("fas fa-home fa-2x fa-fw")" />&nbsp; Início
             </NavLink>
         </li>
         <AuthorizeView>
@@ -18,30 +18,40 @@
                 {
                     <li class="nav-item px-3">
                         <NavLink class="nav-link" href="uhsmanager">
-                            <span class="oi oi-aperture" aria-hidden="true"></span> Unidades de Handling
+                            <Icon Name="@("fab fa-avianex fa-2x fa-fw")" />&nbsp; Unidades de Handling
+                        </NavLink>
+                    </li>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="departamentosmanager">
+                            <Icon Name="@("fas fa-link fa-2x fa-fw")" />&nbsp; Departamentos
                         </NavLink>
                     </li>
                     <li class="nav-item px-3">
                         <NavLink class="nav-link" href="usersmanager">
-                            <span class="oi oi-people" aria-hidden="true"></span> Utilizadores
+                            <Icon Name="@("fas fa-users fa-2x fa-fw")" />&nbsp; Utilizadores
                         </NavLink>
                     </li>
-                    @*<li class="nav-item px-3">
-                <NavLink class="nav-link" href="fileupload">
-                    <span class="oi oi-plus" aria-hidden="true"></span> File Upload
-                </NavLink>
-            </li>*@
                     <li class="nav-item px-3">
                         <NavLink class="nav-link" href="gruposmanager">
-                            <span class="oi oi-list-rich" aria-hidden="true"></span> Grupos
+                            <Icon Name="@("fas fa-layer-group fa-2x fa-fw")" />&nbsp; Grupos
                         </NavLink>
                     </li>
                     <li class="nav-item px-3">
                         <NavLink class="nav-link" href="empresasmanager">
-                            <span class="oi oi-list-rich" aria-hidden="true"></span> Empresas
+                            <Icon Name="@("fas fa-city fa-2x fa-fw")" />&nbsp; Empresas
+                        </NavLink>
+                    </li>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="cursosmanager">
+                            <Icon Name="@("fas fa-book fa-2x fa-fw")" />&nbsp; Cursos
                         </NavLink>
                     </li>
                 }
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link" href="formandosmanager">
+                        <Icon Name="@("fas fa-user-graduate fa-2x fa-fw")" />&nbsp; Formandos
+                    </NavLink>
+                </li>
             </Authorized>
             <NotAuthorized>
                 <li class="nav-item px-3">

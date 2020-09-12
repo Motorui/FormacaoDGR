@@ -6,23 +6,36 @@ using System.Globalization;
 
 namespace FormacaoDGR.Data.Models
 {
-    [Table("Grupos")]
-    public class Grupo : IBaseEntity
+    [Table("Formandos")]
+    public class Formando : IBaseEntity
     {
         [Key]
         public Guid ID { get; set; }
 
         private string _nome;
-        [Required(ErrorMessage = "O campo Nome é obrigatório"), Display(Name = "Nome")]
-        [StringLength(50, ErrorMessage = "O campo {0} deve de conter entre {2} e {1} caracteres.", MinimumLength = 3)]
+        [Required, Display(Name = "Nome")]
         public string Nome
         {
             get => _nome;
             set => _nome = value?.ToUpper(CultureInfo.InvariantCulture);
         }
 
+        [Display(Name = "Interno?")]
+        public bool Interno { get; set; }
+
         #region Relações
-        public virtual ICollection<Empresa> Empresas { get; set; }
+        [Display(Name = "Empresa")]
+        public Guid? EmpresaID { get; set; }
+        public Empresa Empresa { get; set; }
+
+        [Display(Name = "Departamento")]
+        public Guid? DepartamentoID { get; set; }
+        public Departamento Departamento { get; set; }
+
+        public virtual ICollection<FormandoDetalhe> FormandosDetalhes { get; set; }
+        public virtual ICollection<CursosFormando> CursosFormandos { get; set; }
+        public virtual ICollection<RefrescamentosFormando> RefrescamentosFormandos { get; set; }
+
         #endregion
 
         #region BaseEntity

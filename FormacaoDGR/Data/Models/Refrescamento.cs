@@ -6,23 +6,44 @@ using System.Globalization;
 
 namespace FormacaoDGR.Data.Models
 {
-    [Table("Grupos")]
-    public class Grupo : IBaseEntity
+    [Table("Refrescamentos")]
+    public class Refrescamento : IBaseEntity
     {
         [Key]
         public Guid ID { get; set; }
 
         private string _nome;
-        [Required(ErrorMessage = "O campo Nome é obrigatório"), Display(Name = "Nome")]
-        [StringLength(50, ErrorMessage = "O campo {0} deve de conter entre {2} e {1} caracteres.", MinimumLength = 3)]
+        [Required, Display(Name = "Curso")]
         public string Nome
         {
             get => _nome;
             set => _nome = value?.ToUpper(CultureInfo.InvariantCulture);
         }
 
+        private string _codigo;
+        [Required, Display(Name = "Código", ShortName = "Cod.")]
+        public string Codigo
+        {
+            get => _codigo;
+            set => _codigo = value?.ToUpper(CultureInfo.InvariantCulture);
+        }
+
+        [Required, Display(Name = "Duração", ShortName = "Dur.")]
+        public int Duracao { get; set; }
+
+        [Required, Display(Name = "Validade", ShortName = "Val.")]
+        public int Validade { get; set; }
+
+        [Display(Name = "Côr")]
+        public string Cor { get; set; }
+
+        [Display(Name = "E-learning?")]
+        public bool Elearning { get; set; }
+
         #region Relações
-        public virtual ICollection<Empresa> Empresas { get; set; }
+        public Guid CursoID { get; set; }
+        public Curso Curso { get; set; }
+        public virtual ICollection<RefrescamentosFormando> RefrescamentosFormandos { get; set; }
         #endregion
 
         #region BaseEntity

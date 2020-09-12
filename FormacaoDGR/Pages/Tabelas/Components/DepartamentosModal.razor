@@ -1,0 +1,83 @@
+﻿@using FormacaoDGR.Data.Models
+@using FormacaoDGR.Data.Services
+
+@inject Sotsera.Blazor.Toaster.IToaster Toaster
+@inject IDepartamentoService _departamentoService
+@inject IJSRuntime _jsRuntime
+
+<Modal @ref="@DepartamentoModal" role="dialog" id="departamentoModal">
+    <ModalBackdrop />
+    <ModalContent Centered="true" Size="ModalSize.Default">
+        <ModalHeader>
+            <ModalTitle>@CustomHeader</ModalTitle>
+            <CloseButton Clicked="@(() => CloseDepartamentoModal("departamentoModal"))" />
+        </ModalHeader>
+        <EditForm Model="@ModelDepartamento" OnValidSubmit="@HandleValidSubmit">
+            <ModalBody>
+                <DataAnnotationsValidator />
+                <input type="hidden" @bind-value="@ModelDepartamento.ID" />
+                <Field>
+                    <FieldLabel>Número</FieldLabel>
+                    <NumericEdit TValue="int" @bind-Value="@ModelDepartamento.Numero">
+                        <FieldHelp>Inserir número do departamento</FieldHelp>
+                    </NumericEdit>
+                    <ValidationMessage For="@(() => ModelDepartamento.Numero)" />
+                </Field>
+                <Field>
+                    <FieldLabel>Nome</FieldLabel>
+                    <TextEdit @bind-Text="@ModelDepartamento.Nome">
+                        <FieldHelp>Inserir nome do departamento</FieldHelp>
+                    </TextEdit>
+                    <ValidationMessage For="@(() => ModelDepartamento.Nome)" />
+                </Field>
+            </ModalBody>
+            <ModalFooter>
+                <Tooltip Text="Gravar">
+                    <Button Color="Color.Success" Type="ButtonType.Submit">
+                        <Icon Name="IconName.Save" /> Submeter
+                    </Button>
+                </Tooltip>
+                <Tooltip Text="Fechar">
+                    <Button Color="Color.Warning" Clicked="@(() => CloseDepartamentoModal("departamentoModal"))">
+                        <Icon Name="IconName.StepBackward" /> Cancelar
+                    </Button>
+                </Tooltip>
+            </ModalFooter>
+        </EditForm>
+    </ModalContent>
+</Modal>
+
+@code {
+    [Parameter] public Departamento ModelDepartamento { get; set; }
+    [Parameter] public Action DataChanged { get; set; }
+    [Parameter] public RenderFragment CustomHeader { get; set; }
+
+    private Modal DepartamentoModal;
+
+    private async void HandleValidSubmit()
+    {
+        if (ModelDepartamento.ID == Guid.Empty)
+        {
+            await _departamentoService.AddAsync(ModelDepartamento);
+
+            await Task.Delay(100);
+            Toaster.Success("Departamento adicionado com sucesso", "Sucesso!");
+        }
+        else
+        {
+            await _departamentoService.UpdateAsync(ModelDepartamento);
+
+            await Task.Delay(100);
+            Toaster.Success("Departamento editado com sucesso", "Sucesso!");
+        }
+
+        await CloseDepartamentoModal("departamentoModal");
+        DataChanged?.Invoke();
+    }
+
+    private async Task CloseDepartamentoModal(string modalId)
+    {
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", modalId);
+    }
+
+}

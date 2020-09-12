@@ -15,276 +15,285 @@
 @inject IUhService _uhService
 @inject IJSRuntime _jsRuntime
 
-<div class="modal" tabindex="-1" role="dialog" id="userModal">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">@CustomHeader</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <EditForm Model="@ModelUser" OnValidSubmit="@HandleValidSubmit">
-                    <DataAnnotationsValidator />
-                    <div class="form-group">
-                        <input type="hidden" @bind-value="@ModelUser.Id" />
-                        <label for="Name">Nome</label>
-                        <InputText id="Name" class="form-control" @bind-Value="@ModelUser.Name" />
+<Modal @ref="@UsersModal" role="dialog" id="userModal">
+    <ModalBackdrop />
+    <ModalContent Centered="true" Size="ModalSize.ExtraLarge">
+        <ModalHeader>
+            <ModalTitle>@CustomHeader</ModalTitle>
+            <CloseButton Clicked="@(() => CloseUserModal("userModal"))" />
+        </ModalHeader>
+        <EditForm Model="@ModelUser" OnValidSubmit="@HandleValidSubmit">
+            <ModalBody>
+                <DataAnnotationsValidator />
+                <input type="hidden" @bind-value="@ModelUser.Id" />
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is2">Nome</FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is10">
+                        <TextEdit @bind-Text="@ModelUser.Name" />
                         <ValidationMessage For="@(() => ModelUser.Name)" />
-                    </div>
-                    <div class="form-group">
-                        <label for="UserName">Email</label>
-                        <InputText id="UserName" class="form-control" @bind-Value="@ModelUser.UserName" />
+                    </FieldBody>
+                </Field>
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is2">Email</FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is10">
+                        <TextEdit Role="TextRole.Email" @bind-Text="@ModelUser.UserName" />
                         <ValidationMessage For="@(() => ModelUser.UserName)" />
-                    </div>
-                    <div class="form-group">
-                        <label for="UserName">Password</label>
-                        <InputText type="password" autocomplete="password" id="PasswordHash" class="form-control" @bind-Value="@ModelUser.PasswordHash" />
+                    </FieldBody>
+                </Field>
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is2">Password</FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is10">
+                        <TextEdit Role="TextRole.Password" @bind-Text="@ModelUser.PasswordHash" />
                         <ValidationMessage For="@(() => ModelUser.PasswordHash)" />
-                    </div>
-                    <div class="form-group">
-                        <label for="Role">Tipo</label>
-                        <InputSelect id="category" class="form-control" @bind-Value="OwnedRoleId">
-                            <option value="">Select</option>
+                    </FieldBody>
+                </Field>
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is2">Tipo</FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is10">
+                        <Select @bind-SelectedValue="@OwnedRoleId">
                             @foreach (var role in AllRoles)
                             {
-                                <option value="@role.Id">
-                                    @role.Name
-                                </option>
+                                <SelectItem Value="@role.Id">@role.Name</SelectItem>
                             }
-                        </InputSelect>
-                    </div>
-                    <div class="form-group">
-                        <label for="Uhs">UH's</label>
-                        @if (SelectedIds != null)
-                        {
+                        </Select>
+                        <small class="text-muted">Selecionar Grupo de Empresas</small>
+                    </FieldBody>
+                </Field>
+                <Field Horizontal="true">
+                    @if (SelectedIds != null)
+                    {
+                        <FieldLabel ColumnSize="ColumnSize.Is2">UH's</FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is10">
                             <CheckBoxList Data="@UhList" TextField="@((item)=>item.UhNome)"
                                           ValueField="@((item)=>item.UhID)" SelectedValues="@SelectedIds" />
-                        }
-                    </div>
-                    <span data-toggle="tooltip" data-placement="top" title="Gravar">
-                        <button type="submit" class="btn btn-success btn-sm">
-                            <span class="oi oi-hard-drive"></span> Submeter
-                        </button>
-                    </span>
-                    <span data-toggle="tooltip" data-placement="top" title="Fechar">
-                        <button type="button" class="btn btn-warning btn-sm" data-dismiss="modal">
-                            <span class="oi oi-hard-drive"></span> Cancelar
-                        </button>
-                    </span>
-                </EditForm>
-                <p>
-                    <span style="color:red">@strError</span>
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
+                        </FieldBody>
+                    }
+                </Field>
+                </ModalBody>
+                <ModalFooter>
+                    <p>
+                        <span style="color:red">@strError</span>
+                    </p>
+                    <Tooltip Text="Gravar">
+                        <Button Color="Color.Success" Type="ButtonType.Submit">
+                            <Icon Name="IconName.Save" /> Submeter
+                        </Button>
+                    </Tooltip>
+                    <Tooltip Text="Fechar">
+                        <Button Color="Color.Warning" Clicked="@(() => CloseUserModal("userModal"))">
+                            <Icon Name="IconName.StepBackward" /> Cancelar
+                        </Button>
+                    </Tooltip>
+                </ModalFooter>
+            </EditForm>
+        </ModalContent>
+    </Modal>
 
-@code {
-    [Parameter] public ApplicationUser ModelUser { get; set; }
-    [Parameter] public Action DataChanged { get; set; }
-    [Parameter] public RenderFragment CustomHeader { get; set; }
-    [Parameter] public bool IsEdit { get; set; }
+    @code {
+        private Modal UsersModal;
 
-    IList<ApplicationRole> AllRoles = new List<ApplicationRole>();
-    ApplicationUserRole ownedRole = new ApplicationUserRole();
-    public string OwnedRoleId { get; set; } = string.Empty;
-    // Para guardar erros
-    string strError = "";
+        [Parameter] public ApplicationUser ModelUser { get; set; }
+        [Parameter] public Action DataChanged { get; set; }
+        [Parameter] public RenderFragment CustomHeader { get; set; }
+        [Parameter] public bool IsEdit { get; set; }
 
-    public IList<Uh> UhList { get; set; }
-    protected List<Guid> SelectedIds = new List<Guid>();
+        IList<ApplicationRole> AllRoles = new List<ApplicationRole>();
+        ApplicationUserRole ownedRole = new ApplicationUserRole();
+        public string OwnedRoleId { get; set; } = string.Empty;
+        // Para guardar erros
+        string strError = "";
 
-    protected override async Task OnInitializedAsync()
-    {
-        AllRoles = await _appRoleService.GetAllRolesAsync();
-        UhList = await _uhService.GetAllUhsAsync();
-    }
+        public IList<Uh> UhList { get; set; }
+        protected List<Guid> SelectedIds = new List<Guid>();
 
-    protected override void OnParametersSet()
-    {
-        string UserID = ModelUser.Id;
-
-       Task.Run(async () => await FillOwnedList(UserID)).Wait();
-
-    }
-
-    private async Task FillOwnedList(string uid)
-    {
-        SelectedIds = await _userUhService.GetOwnedUserUhsAsync(uid);
-
-        ownedRole = await _appUserRoleService.GetUserRoleAsync(uid);
-        if (ownedRole != null)
+        protected override async Task OnInitializedAsync()
         {
-            OwnedRoleId = ownedRole.RoleId;
+            AllRoles = await _appRoleService.GetAllRolesAsync();
+            UhList = await _uhService.GetAllUhsAsync();
         }
-        else
-        {
-            OwnedRoleId = string.Empty;
-        }
-    }
 
-    private async void HandleValidSubmit()
-    {
-        try
+        protected override void OnParametersSet()
         {
-            if (IsEdit)
+            string UserID = ModelUser.Id;
+
+            Task.Run(async () => await FillOwnedList(UserID)).Wait();
+
+        }
+
+        private async Task FillOwnedList(string uid)
+        {
+            SelectedIds = await _userUhService.GetOwnedUserUhsAsync(uid);
+
+            ownedRole = await _appUserRoleService.GetUserRoleAsync(uid);
+            if (ownedRole != null)
             {
-                // Get the user
-                var user = await Service.FindByIdAsync(ModelUser.Id);
+                OwnedRoleId = ownedRole.RoleId;
+            }
+            else
+            {
+                OwnedRoleId = string.Empty;
+            }
+        }
 
-                // Update the user
-                user.Name = ModelUser.Name;
-                user.UserName = ModelUser.UserName;
-                user.NormalizedUserName = ModelUser.UserName.ToUpper();
-                user.Email = ModelUser.UserName;
-                user.NormalizedEmail = ModelUser.UserName.ToUpper();
-                user.PasswordHash = user.PasswordHash;
-
-                // Only update password if the current value
-                // is not the default value
-                if (ModelUser.PasswordHash != "*****")
+        private async void HandleValidSubmit()
+        {
+            try
+            {
+                if (IsEdit)
                 {
-                    var resetToken = await Service.GeneratePasswordResetTokenAsync(user);
-                    var passworduser = await Service
-                        .ResetPasswordAsync(
-                            user,
-                            resetToken,
-                            ModelUser.PasswordHash
-                        );
+                    // Get the user
+                    var user = await Service.FindByIdAsync(ModelUser.Id);
 
-                    if (!passworduser.Succeeded)
+                    // Update the user
+                    user.Name = ModelUser.Name;
+                    user.UserName = ModelUser.UserName;
+                    user.NormalizedUserName = ModelUser.UserName.ToUpper();
+                    user.Email = ModelUser.UserName;
+                    user.NormalizedEmail = ModelUser.UserName.ToUpper();
+                    user.PasswordHash = user.PasswordHash;
+
+                    // Only update password if the current value
+                    // is not the default value
+                    if (ModelUser.PasswordHash != "*****")
                     {
-                        if (passworduser.Errors.FirstOrDefault() != null)
+                        var resetToken = await Service.GeneratePasswordResetTokenAsync(user);
+                        var passworduser = await Service
+                            .ResetPasswordAsync(
+                                user,
+                                resetToken,
+                                ModelUser.PasswordHash
+                            );
+
+                        if (!passworduser.Succeeded)
                         {
-                            strError = passworduser.Errors.FirstOrDefault().Description;
+                            if (passworduser.Errors.FirstOrDefault() != null)
+                            {
+                                strError = passworduser.Errors.FirstOrDefault().Description;
+                            }
+                            else
+                            {
+                                strError = "Pasword error";
+                            }
+                            // Keep the popup opened
+                            return;
+                        }
+                    }
+
+                    var updateResult = await Service.UpdateAsync(user);
+
+                    if (!updateResult.Succeeded)
+                    {
+                        if (updateResult.Errors.FirstOrDefault() != null)
+                        {
+                            strError = updateResult.Errors.FirstOrDefault().Description;
                         }
                         else
                         {
-                            strError = "Pasword error";
+                            strError = "Update error";
                         }
                         // Keep the popup opened
                         return;
                     }
-                }
-
-                var updateResult = await Service.UpdateAsync(user);
-
-                if (!updateResult.Succeeded)
-                {
-                    if (updateResult.Errors.FirstOrDefault() != null)
-                    {
-                        strError = updateResult.Errors.FirstOrDefault().Description;
-                    }
                     else
                     {
-                        strError = "Update error";
-                    }
-                    // Keep the popup opened
-                    return;
-                }
-                else
-                {
-                    await _userUhService.DeleteAllUserUhAsync(ModelUser.Id);
-                    await _appUserRoleService.DeleteAllUserRolesAsync(ModelUser.Id);
+                        await _userUhService.DeleteAllUserUhAsync(ModelUser.Id);
+                        await _appUserRoleService.DeleteAllUserRolesAsync(ModelUser.Id);
 
-                    if (SelectedIds != null)
-                    {
-                        foreach (var ownedUh in SelectedIds)
+                        if (SelectedIds != null)
                         {
-                            UserUh itemUserUh = new UserUh()
+                            foreach (var ownedUh in SelectedIds)
                             {
-                                UhID = ownedUh,
+                                UserUh itemUserUh = new UserUh()
+                                {
+                                    UhID = ownedUh,
+                                    UserId = user.Id
+                                };
+                                await _userUhService.AddUserUhAsync(itemUserUh);
+                            }
+                        }
+
+                        if (OwnedRoleId != null)
+                        {
+                            ApplicationUserRole itemUserRole = new ApplicationUserRole()
+                            {
+                                RoleId = OwnedRoleId,
                                 UserId = user.Id
                             };
-                            await _userUhService.AddUserUhAsync(itemUserUh);
+                            await _appUserRoleService.AddUserRoleAsync(itemUserRole);
                         }
                     }
 
-                    if (OwnedRoleId != null)
-                    {
-                        ApplicationUserRole itemUserRole = new ApplicationUserRole()
-                        {
-                            RoleId = OwnedRoleId,
-                            UserId = user.Id
-                        };
-                        await _appUserRoleService.AddUserRoleAsync(itemUserRole);
-                    }
-                }
+                    await Task.Delay(100);
+                    Toaster.Success("Utilizador editado com sucesso", "Sucesso!");
 
-                await Task.Delay(100);
-                Toaster.Success("Utilizador editado com sucesso", "Sucesso!");
-
-            }
-            else
-            {
-                // Insert new user
-                var NewUser = new ApplicationUser
-                {
-                    Name = ModelUser.Name,
-                    UserName = ModelUser.UserName,
-                    NormalizedUserName = ModelUser.UserName.ToUpper(),
-                    Email = ModelUser.UserName,
-                    NormalizedEmail = ModelUser.UserName.ToUpper()
-                };
-                var CreateResult = await Service.CreateAsync(NewUser, ModelUser.PasswordHash);
-                if (!CreateResult.Succeeded)
-                {
-                    if (CreateResult.Errors.FirstOrDefault() != null)
-                    {
-                        strError = CreateResult.Errors.FirstOrDefault().Description;
-                    }
-                    else
-                    {
-                        strError = "Create error";
-                    }
-                    // Keep the popup opened
-                    return;
                 }
                 else
                 {
-                    if (SelectedIds != null)
+                    // Insert new user
+                    var NewUser = new ApplicationUser
                     {
-                        foreach (var ownedUh in SelectedIds)
+                        Name = ModelUser.Name,
+                        UserName = ModelUser.UserName,
+                        NormalizedUserName = ModelUser.UserName.ToUpper(),
+                        Email = ModelUser.UserName,
+                        NormalizedEmail = ModelUser.UserName.ToUpper()
+                    };
+                    var CreateResult = await Service.CreateAsync(NewUser, ModelUser.PasswordHash);
+                    if (!CreateResult.Succeeded)
+                    {
+                        if (CreateResult.Errors.FirstOrDefault() != null)
                         {
-                            UserUh itemUserUh = new UserUh()
+                            strError = CreateResult.Errors.FirstOrDefault().Description;
+                        }
+                        else
+                        {
+                            strError = "Create error";
+                        }
+                        // Keep the popup opened
+                        return;
+                    }
+                    else
+                    {
+                        if (SelectedIds != null)
+                        {
+                            foreach (var ownedUh in SelectedIds)
                             {
-                                UhID = ownedUh,
+                                UserUh itemUserUh = new UserUh()
+                                {
+                                    UhID = ownedUh,
+                                    UserId = NewUser.Id
+                                };
+                                await _userUhService.AddUserUhAsync(itemUserUh);
+                            }
+                        }
+
+                        if (OwnedRoleId != null)
+                        {
+                            ApplicationUserRole itemUserRole = new ApplicationUserRole()
+                            {
+                                RoleId = OwnedRoleId,
                                 UserId = NewUser.Id
                             };
-                            await _userUhService.AddUserUhAsync(itemUserUh);
+                            await _appUserRoleService.AddUserRoleAsync(itemUserRole);
                         }
                     }
 
-                    if (OwnedRoleId != null)
-                    {
-                        ApplicationUserRole itemUserRole = new ApplicationUserRole()
-                        {
-                            RoleId = OwnedRoleId,
-                            UserId = NewUser.Id
-                        };
-                        await _appUserRoleService.AddUserRoleAsync(itemUserRole);
-                    }
+                    await Task.Delay(100);
+                    Toaster.Success("Utilizador adicionado com sucesso", "Sucesso!");
                 }
 
-                await Task.Delay(100);
-                Toaster.Success("Utilizador adicionado com sucesso", "Sucesso!");
+                await CloseUserModal("userModal");
+                DataChanged?.Invoke();
             }
-
-            await CloseUserModal("userModal");
-            DataChanged?.Invoke();
+            catch (Exception ex)
+            {
+                strError = ex.GetBaseException().Message;
+            }
         }
-        catch (Exception ex)
+
+        private async Task CloseUserModal(string modalId)
         {
-            strError = ex.GetBaseException().Message;
+            await _jsRuntime.InvokeAsync<object>("global.closeModal", modalId);
         }
-    }
 
-    private async Task CloseUserModal(string modalId)
-    {
-        await _jsRuntime.InvokeAsync<object>("global.closeModal", modalId);
     }
-
-}

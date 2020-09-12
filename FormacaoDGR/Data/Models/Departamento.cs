@@ -6,15 +6,17 @@ using System.Globalization;
 
 namespace FormacaoDGR.Data.Models
 {
-    [Table("Grupos")]
-    public class Grupo : IBaseEntity
+    [Table("Departamentos")]
+    public class Departamento : IBaseEntity
     {
         [Key]
         public Guid ID { get; set; }
 
+        [Required, Display(Name = "Número", ShortName = "Núm.")]
+        public int Numero { get; set; }
+
         private string _nome;
-        [Required(ErrorMessage = "O campo Nome é obrigatório"), Display(Name = "Nome")]
-        [StringLength(50, ErrorMessage = "O campo {0} deve de conter entre {2} e {1} caracteres.", MinimumLength = 3)]
+        [Required, MaxLength(150), Display(Name = "Departamento", ShortName = "Dep.")]
         public string Nome
         {
             get => _nome;
@@ -22,7 +24,7 @@ namespace FormacaoDGR.Data.Models
         }
 
         #region Relações
-        public virtual ICollection<Empresa> Empresas { get; set; }
+        public virtual ICollection<Formando> Formandos { get; set; }
         #endregion
 
         #region BaseEntity

@@ -1,14 +1,14 @@
-﻿@page "/uhsmanager"
+﻿@page "/departamentosmanager"
 @attribute [Authorize]
 
-@using FormacaoDGR.Areas.Identity.Models
-@using FormacaoDGR.Areas.Identity.Services
+@using FormacaoDGR.Data.Models
+@using FormacaoDGR.Data.Services
 @using FormacaoDGR.Pages.Components
-@using FormacaoDGR.Pages.Admin.Components
+@using FormacaoDGR.Pages.Tabelas.Components
 
 @inject Sotsera.Blazor.Toaster.IToaster Toaster
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IUhService _uhService
+@inject IDepartamentoService _departamentoService
 @inject IJSRuntime _jsRuntime
 
 <AuthorizeView Context="authContext">
@@ -19,16 +19,19 @@
                     <BreadcrumbLink To="">Início</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbItem>
-                    <BreadcrumbLink To="uhsmanager">Unidades de handling</BreadcrumbLink>
+                    <BreadcrumbLink To="#">Tabelas</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="departamentosmanager">Departamentos</BreadcrumbLink>
                 </BreadcrumbItem>
             </Breadcrumb>
             <Row>
                 <Column ColumnSize="ColumnSize.Is6.OnDesktop.Is12.OnMobile">
                     <Card>
                         <CardBody>
-                            <CardTitle Size="5">Unidades de Handling</CardTitle>
+                            <CardTitle Size="5">Grupos</CardTitle>
                             <CardText>
-                                @if (AllUhs == null)
+                                @if (AllDepartamentos == null)
                                 {
                                     <p><em>Loading...</em></p>
                                 }
@@ -38,9 +41,9 @@
                                         <TableHeader ThemeContrast="ThemeContrast.Light">
                                             <TableRow>
                                                 <TableHeaderCell>Menu</TableHeaderCell>
+                                                <TableHeaderCell>Número</TableHeaderCell>
                                                 <TableHeaderCell>Nome</TableHeaderCell>
-                                                <TableHeaderCell>IATA</TableHeaderCell>
-                                                @if (@authContext.User.IsInRole("temp")) //substituir por Admins
+                                                @if (authContext.User.IsInRole("temp")) //substituir por Admins
                                                 {
                                                     <TableHeaderCell>Criado em:</TableHeaderCell>
                                                     <TableHeaderCell>Criado por:</TableHeaderCell>
@@ -50,31 +53,31 @@
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            @foreach (Uh uhItem in AllUhs)
+                                            @foreach (Departamento departamentoItem in AllDepartamentos)
                                             {
                                                 <TableRow>
                                                     <TableRowCell>
-                                                        <Tooltip Text="Editar UH">
-                                                            <Button Color="Color.Info" Clicked="@(() => PrepareForEdit(uhItem))"
-                                                                    data-toggle="modal" data-target="#uhModal">
+                                                        <Tooltip Text="Editar Departamento">
+                                                            <Button Color="Color.Info" Clicked="@(() => PrepareForEdit(departamentoItem))"
+                                                                    data-toggle="modal" data-target="#departamentoModal">
                                                                 <Icon Name="IconName.Edit" />
                                                             </Button>
                                                         </Tooltip>
-                                                        <Tooltip Text="Apagar UH">
-                                                            <Button Color="Color.Danger" Clicked="@(() => PrepareForDelete(uhItem))"
+                                                        <Tooltip Text="Apagar Departamento">
+                                                            <Button Color="Color.Danger" Clicked="@(() => PrepareForDelete(departamentoItem))"
                                                                     data-toggle="modal" data-target="#confirmDeleteModal">
                                                                 <Icon Name="IconName.Delete" />
                                                             </Button>
                                                         </Tooltip>
                                                     </TableRowCell>
-                                                    <TableRowCell>@uhItem.UhNome</TableRowCell>
-                                                    <TableRowCell>@uhItem.UhIATA</TableRowCell>
-                                                    @if (@authContext.User.IsInRole("temp")) //substituir por Admins
+                                                    <TableRowCell>@departamentoItem.Numero.ToString()</TableRowCell>
+                                                    <TableRowCell>@departamentoItem.Nome</TableRowCell>
+                                                    @if (authContext.User.IsInRole("temp")) //substituir por Admins
                                                     {
-                                                        <TableRowCell>@uhItem.CreatedAt</TableRowCell>
-                                                        <TableRowCell>@uhItem.CreatedBy</TableRowCell>
-                                                        <TableRowCell>@uhItem.LastUpdatedAt</TableRowCell>
-                                                        <TableRowCell>@uhItem.LastUpdatedBy</TableRowCell>
+                                                        <TableRowCell>@departamentoItem.CreatedAt</TableRowCell>
+                                                        <TableRowCell>@departamentoItem.CreatedBy</TableRowCell>
+                                                        <TableRowCell>@departamentoItem.LastUpdatedAt</TableRowCell>
+                                                        <TableRowCell>@departamentoItem.LastUpdatedBy</TableRowCell>
                                                     }
                                                 </TableRow>
                                             }
@@ -82,9 +85,10 @@
                                     </Table>
 
                                 }
-                                <Tooltip Text="Criar nova Unidade de Handling">
-                                    <Button Color="Color.Success" Clicked="@(() => InitializeUhObject())"
-                                            data-toggle="modal" data-target="#uhModal">
+
+                                <Tooltip Text="Criar novo Departamento">
+                                    <Button Color="Color.Success" Clicked="@(() => InitializeDepartamentoObject())"
+                                            data-toggle="modal" data-target="#departamentoModal">
                                         Criar <Icon Name="IconName.Add" />
                                     </Button>
                                 </Tooltip>
@@ -96,9 +100,9 @@
         </Container>
 
         <ConfirmDialog OnClick="@Delete" />
-        <UhModal ModelUh=modelUh DataChanged="@DataChanged">
+        <DepartamentosModal ModelDepartamento=modelDepartamento DataChanged="@DataChanged">
             <CustomHeader>@customHeader</CustomHeader>
-        </UhModal>
+        </DepartamentosModal>
 
     </Authorized>
     <NotAuthorized>
@@ -108,53 +112,55 @@
 
 @code {
 
-    IList<Uh> AllUhs = new List<Uh>();
-    Uh modelUh = new Uh();
+    IList<Departamento> AllDepartamentos = new List<Departamento>();
+    Departamento modelDepartamento = new Departamento();
+
     string customHeader = string.Empty;
 
+    //protected override async Task OnInitializedAsync()
     protected override async Task OnInitializedAsync()
     {
-        await GetAllUhs();
+        await GetAllDepartamentos();
     }
 
-    private void InitializeUhObject()
+    private void InitializeDepartamentoObject()
     {
-        modelUh = new Uh();
-        customHeader = "Adicionar UH";
+        modelDepartamento = new Departamento();
+        customHeader = "Adicionar Departamento";
     }
 
     private async void DataChanged()
     {
-        await GetAllUhs();
+        await GetAllDepartamentos();
         StateHasChanged();
     }
 
-    public async Task GetAllUhs()
+    public async Task GetAllDepartamentos()
     {
-        AllUhs = await _uhService.GetAllUhsAsync();
+        AllDepartamentos = await _departamentoService.GetAllAsync();
     }
 
-    private void PrepareForEdit(Uh uh)
+    private void PrepareForEdit(Departamento departamento)
     {
-        customHeader = "Editar UH";
-        modelUh = uh;
+        customHeader = "Editar Departamento";
+        modelDepartamento = departamento;
     }
 
-    private void PrepareForDelete(Uh uh)
+    private void PrepareForDelete(Departamento departamento)
     {
-        modelUh = uh;
+        modelDepartamento = departamento;
     }
 
     private async Task Delete()
     {
-        await _uhService.DeleteUhAsync(modelUh);
+        await _departamentoService.DeleteAsync(modelDepartamento);
         await _jsRuntime.InvokeAsync<object>("global.closeModal", "confirmDeleteModal");
 
-        await GetAllUhs();
-        modelUh = new Uh();
+        AllDepartamentos = await _departamentoService.GetAllAsync();
+        modelDepartamento = new Departamento();
 
         await Task.Delay(100);
-        Toaster.Error("UH apagada com sucesso", "Sucesso!");
+        Toaster.Error("Departamento apagado com sucesso", "Sucesso!");
     }
 
 }

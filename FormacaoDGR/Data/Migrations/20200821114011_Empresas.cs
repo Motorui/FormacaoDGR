@@ -11,13 +11,13 @@ namespace FormacaoDGR.Data.Migrations
                 name: "CodigosPostais",
                 columns: table => new
                 {
-                    cod_postal = table.Column<string>(nullable: false),
-                    localidade = table.Column<string>(nullable: true),
-                    desig_postal = table.Column<string>(nullable: true)
+                    Cod_postal = table.Column<string>(nullable: false),
+                    Localidade = table.Column<string>(nullable: true),
+                    Desig_postal = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CodigosPostais", x => x.cod_postal);
+                    table.PrimaryKey("PK_CodigosPostais", x => x.Cod_postal);
                 });
 
             migrationBuilder.CreateTable(

@@ -6,29 +6,29 @@ using System.Threading.Tasks;
 
 namespace FormacaoDGR.Data.Services
 {
-    public interface IEmpresaService
+    public interface ISalaService
     {
-        Task<IList<Empresa>> GetAllAsync();
-        Task<Empresa> GetAsync(Guid id);
-        Task<Empresa> AddAsync(Empresa empresa);
-        Task<Empresa> UpdateAsync(Empresa empresa);
-        Task<Empresa> DeleteAsync(Empresa empresa);
+        Task<IList<Sala>> GetAllAsync();
+        Task<Sala> GetAsync(Guid id);
+        Task<Sala> AddAsync(Sala sala);
+        Task<Sala> UpdateAsync(Sala sala);
+        Task<Sala> DeleteAsync(Sala sala);
     }
 
-    public class EmpresaService : IEmpresaService
+    public class SalaService : ISalaService
     {
         private readonly ApplicationDbContext _db;
 
-        public EmpresaService(ApplicationDbContext context)
+        public SalaService(ApplicationDbContext context)
         {
             _db = context;
         }
 
-        public async Task<IList<Empresa>> GetAllAsync()
+        public async Task<IList<Sala>> GetAllAsync()
         {
             try
             {
-                return await _db.Empresas.Include(g => g.Grupo).ToListAsync();
+                return await _db.Salas.ToListAsync();
             }
             catch (Exception)
             {
@@ -36,12 +36,12 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Empresa> GetAsync(Guid id)
+        public async Task<Sala> GetAsync(Guid id)
         {
             try
             {
-                Empresa empresa = await _db.Empresas.Include(g => g.Grupo).FirstOrDefaultAsync(i => i.ID == id);
-                return empresa;
+                Sala sala = await _db.Salas.FindAsync(id);
+                return sala;
             }
             catch (Exception)
             {
@@ -49,13 +49,13 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Empresa> AddAsync(Empresa empresa)
+        public async Task<Sala> AddAsync(Sala sala)
         {
             try
             {
-                _ = _db.Empresas.Add(empresa);
+                _ = _db.Salas.Add(sala);
                 _ = await _db.SaveChangesAsync();
-                return empresa;
+                return sala;
             }
             catch (Exception)
             {
@@ -63,13 +63,14 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Empresa> UpdateAsync(Empresa empresa)
+        public async Task<Sala> UpdateAsync(Sala sala)
         {
             try
             {
-                _ = _db.Entry(empresa).State = EntityState.Modified;
+                _db.Entry(sala).State = EntityState.Modified;
                 _ = await _db.SaveChangesAsync();
-                return empresa;
+                return sala;
+
             }
             catch (Exception)
             {
@@ -77,19 +78,18 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Empresa> DeleteAsync(Empresa empresa)
+        public async Task<Sala> DeleteAsync(Sala sala)
         {
             try
             {
-                _ = _db.Empresas.Remove(empresa);
+                _ = _db.Salas.Remove(sala);
                 _ = await _db.SaveChangesAsync();
-                return empresa;
+                return sala;
             }
             catch (Exception)
             {
                 throw;
             }
         }
-
     }
 }

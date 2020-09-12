@@ -24,9 +24,34 @@
     <Compile Remove="Data\Migrations\20200618144437_ServiceOrders.Designer.cs" />
     <Compile Remove="Data\Migrations\20200618144711_ServiceOrders.cs" />
     <Compile Remove="Data\Migrations\20200618144711_ServiceOrders.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200825132530_FixEmpresas.cs" />
+    <Compile Remove="Data\Migrations\20200825132530_FixEmpresas.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200831084214_AddMajorEntities.cs" />
+    <Compile Remove="Data\Migrations\20200831084214_AddMajorEntities.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200831090402_AddMajorEntities.cs" />
+    <Compile Remove="Data\Migrations\20200831090402_AddMajorEntities.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200831091303_AddMajorEntities.cs" />
+    <Compile Remove="Data\Migrations\20200831091303_AddMajorEntities.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200831091553_AddMajorEntities.cs" />
+    <Compile Remove="Data\Migrations\20200831091553_AddMajorEntities.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200831091747_AddMajorEntities.cs" />
+    <Compile Remove="Data\Migrations\20200831091747_AddMajorEntities.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200831092232_AddMajorEntities.cs" />
+    <Compile Remove="Data\Migrations\20200831092232_AddMajorEntities.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200831093146_AddMajorEntities.cs" />
+    <Compile Remove="Data\Migrations\20200831093146_AddMajorEntities.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200831093257_AddMajorEntities.cs" />
+    <Compile Remove="Data\Migrations\20200831093257_AddMajorEntities.Designer.cs" />
+    <Compile Remove="Data\Migrations\20200905105535_hotfix.cs" />
+    <Compile Remove="Data\Migrations\20200905105535_hotfix.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Blazored.Typeahead" Version="4.3.0" />
+    <PackageReference Include="Blazorise.Bootstrap" Version="0.9.1.2" />
+    <PackageReference Include="Blazorise.Components" Version="0.9.1.2" />
+    <PackageReference Include="Blazorise.DataGrid" Version="0.9.1.2" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="0.9.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="3.1.7" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="3.1.7" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="3.1.7" />

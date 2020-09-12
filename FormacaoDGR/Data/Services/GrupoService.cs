@@ -8,11 +8,11 @@ namespace FormacaoDGR.Data.Services
 {
     public interface IGrupoService
     {
-        Task<IList<Grupo>> GetAllGruposAsync();
-        Task<Grupo> GetGrupoAsync(Guid id);
-        Task<Grupo> AddGrupoAsync(Grupo grupo);
-        Task<Grupo> UpdateGrupoAsync(Grupo grupo);
-        Task<Grupo> DeleteGrupoAsync(Grupo grupo);
+        Task<IList<Grupo>> GetAllAsync();
+        Task<Grupo> GetAsync(Guid id);
+        Task<Grupo> AddAsync(Grupo grupo);
+        Task<Grupo> UpdateAsync(Grupo grupo);
+        Task<Grupo> DeleteAsync(Grupo grupo);
     }
 
     public class GrupoService : IGrupoService
@@ -24,12 +24,11 @@ namespace FormacaoDGR.Data.Services
             _db = context;
         }
 
-        public async Task<IList<Grupo>> GetAllGruposAsync()
+        public async Task<IList<Grupo>> GetAllAsync()
         {
             try
             {
-                IList<Grupo> grupos = await _db.Grupos.ToListAsync();
-                return grupos;
+                return await _db.Grupos.ToListAsync();
             }
             catch (Exception)
             {
@@ -37,12 +36,11 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Grupo> GetGrupoAsync(Guid id)
+        public async Task<Grupo> GetAsync(Guid id)
         {
             try
             {
-                Grupo grupo = await _db.Grupos.FindAsync(id);
-                return grupo;
+                return await _db.Grupos.FindAsync(id);
             }
             catch (Exception)
             {
@@ -50,12 +48,14 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Grupo> AddGrupoAsync(Grupo grupo)
+        public async Task<Grupo> AddAsync(Grupo grupo)
         {
             try
             {
                 _ = _db.Grupos.Add(grupo);
                 _ = await _db.SaveChangesAsync();
+
+                _db.Entry(grupo).State = EntityState.Detached;
                 return grupo;
             }
             catch (Exception)
@@ -64,12 +64,14 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Grupo> UpdateGrupoAsync(Grupo grupo)
+        public async Task<Grupo> UpdateAsync(Grupo grupo)
         {
             try
             {
                 _db.Entry(grupo).State = EntityState.Modified;
                 _ = await _db.SaveChangesAsync();
+
+                _db.Entry(grupo).State = EntityState.Detached;
                 return grupo;
             }
             catch (Exception)
@@ -78,7 +80,7 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Grupo> DeleteGrupoAsync(Grupo grupo)
+        public async Task<Grupo> DeleteAsync(Grupo grupo)
         {
             try
             {

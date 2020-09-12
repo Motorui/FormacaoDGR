@@ -2,17 +2,20 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace FormacaoDGR.Data.Services
 {
     public interface ICodigoPostalService
     {
-        Task<IList<CodigoPostal>> GetAllCodigosPostaisAsync();
-        Task<CodigoPostal> GetCodigoPostalAsync(Guid id);
-        Task<CodigoPostal> AddCodigoPostalAsync(CodigoPostal codigoPostal);
-        Task<CodigoPostal> UpdateCodigoPostalAsync(CodigoPostal codigoPostal);
-        Task<CodigoPostal> DeleteCodigoPostalAsync(CodigoPostal codigoPostal);
+        Task<IList<CodigoPostal>> GetAllAsync();
+        IEnumerable<string> GetArray();
+        Task<IList<CodigoPostal>> GetLikeAsync(string search);
+        Task<CodigoPostal> GetAsync(string id);
+        Task<CodigoPostal> AddAsync(CodigoPostal cp);
+        Task<CodigoPostal> UpdateAsync(CodigoPostal cp);
+        Task<CodigoPostal> DeleteAsync(CodigoPostal cp);
     }
 
     public class CodigoPostalService : ICodigoPostalService
@@ -24,7 +27,7 @@ namespace FormacaoDGR.Data.Services
             _db = context;
         }
 
-        public async Task<IList<CodigoPostal>> GetAllCodigosPostaisAsync()
+        public async Task<IList<CodigoPostal>> GetAllAsync()
         {
             try
             {
@@ -36,12 +39,11 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<CodigoPostal> GetCodigoPostalAsync(Guid id)
+        IEnumerable<string> ICodigoPostalService.GetArray()
         {
             try
             {
-                CodigoPostal codigoPostal = await _db.CodigosPostais.FindAsync(id);
-                return codigoPostal;
+                return _db.CodigosPostais.Select(c => c.Cod_postal).ToArray();
             }
             catch (Exception)
             {
@@ -49,26 +51,11 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<CodigoPostal> AddCodigoPostalAsync(CodigoPostal codigoPostal)
+        public async Task<IList<CodigoPostal>> GetLikeAsync(string search)
         {
             try
             {
-                _ = _db.CodigosPostais.Add(codigoPostal);
-                _ = await _db.SaveChangesAsync();
-                return codigoPostal;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-        public async Task<CodigoPostal> UpdateCodigoPostalAsync(CodigoPostal codigoPostal)
-        {
-            try
-            {
-                _db.Entry(codigoPostal).State = EntityState.Modified;
-                _ = await _db.SaveChangesAsync();
-                return codigoPostal;
+                return await _db.CodigosPostais.Where(s => s.Cod_postal.Contains(search)).Take(1000).ToListAsync();
             }
             catch (Exception)
             {
@@ -76,13 +63,12 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<CodigoPostal> DeleteCodigoPostalAsync(CodigoPostal codigoPostal)
+        public async Task<CodigoPostal> GetAsync(string id)
         {
             try
             {
-                _ = _db.CodigosPostais.Remove(codigoPostal);
-                _ = await _db.SaveChangesAsync();
-                return codigoPostal;
+                CodigoPostal cp = await _db.CodigosPostais.FindAsync(id);
+                return cp;
             }
             catch (Exception)
             {
@@ -90,5 +76,46 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
+        public async Task<CodigoPostal> AddAsync(CodigoPostal cp)
+        {
+            try
+            {
+                _ = _db.CodigosPostais.Add(cp);
+                _ = await _db.SaveChangesAsync();
+                return cp;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<CodigoPostal> UpdateAsync(CodigoPostal cp)
+        {
+            try
+            {
+                _db.Entry(cp).State = EntityState.Modified;
+                _ = await _db.SaveChangesAsync();
+                return cp;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<CodigoPostal> DeleteAsync(CodigoPostal cp)
+        {
+            try
+            {
+                _ = _db.CodigosPostais.Remove(cp);
+                _ = await _db.SaveChangesAsync();
+                return cp;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
     }
 }

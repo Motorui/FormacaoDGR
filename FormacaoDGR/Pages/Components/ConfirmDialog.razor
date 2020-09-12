@@ -1,37 +1,38 @@
-﻿<div class="modal" tabindex="-1" role="dialog" id="confirmDeleteModal">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmação!!!</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Deseja de apagar esta entrada?</p>
-                <p>Não será possível recupera-la!</p>
-            </div>
-            <div class="modal-footer">
-                <span data-toggle="tooltip" data-placement="top" title="Apagar">
-                    <button type="submit" class="btn btn-success btn-sm" @onclick="OnClick" title="Apagar">
-                        <span class="oi oi-hard-drive"></span> Sim
-                    </button>
-                </span>
-                <span data-toggle="tooltip" data-placement="top" title="Fechar">
-                    <button type="button" class="btn btn-warning btn-sm" data-dismiss="modal">
-                        <span class="oi oi-hard-drive"></span> Cancelar
-                    </button>
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
+﻿@inject IJSRuntime _jsRuntime
+
+<Modal @ref="@ConfirmDeleteModal" role="dialog" id="confirmDeleteModal">
+    <ModalBackdrop />
+    <ModalContent IsCentered="true">
+        <ModalHeader>
+            <ModalTitle>Confirmação!!!</ModalTitle>
+            <CloseButton Clicked="@(() => CloseGrupoModal("confirmDeleteModal"))" />
+        </ModalHeader>
+        <ModalBody>
+            <p>Deseja de apagar esta entrada?</p>
+            <p>Não será possível recupera-la!</p>
+        </ModalBody>
+        <ModalFooter>
+            <Tooltip Text="Apagar">
+                <Button Color="Color.Success" @onclick="OnClick">
+                    <Icon Name="IconName.Save" /> Sim
+                </Button>
+            </Tooltip>
+            <Tooltip Text="Fechar">
+                <Button Color="Color.Warning" Clicked="@(() => CloseGrupoModal("confirmDeleteModal"))">
+                    <Icon Name="IconName.StepBackward" /> Cancelar
+                </Button>
+            </Tooltip>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
 
 @code {
+    private Modal ConfirmDeleteModal;
+
     private Dictionary<string, object> cdBtnConfig(string title, string ddismiss)
     {
         var btn = new Dictionary<string, object>()
-        {
+    {
             { "title", title},
             { "data-dismiss", ddismiss}
         };
@@ -44,4 +45,9 @@
 
     [Parameter]
     public EventCallback<MouseEventArgs> OnClick { get; set; }
+
+    private async Task CloseGrupoModal(string modalId)
+    {
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", modalId);
+    }
 }

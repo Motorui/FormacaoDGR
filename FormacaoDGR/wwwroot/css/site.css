@@ -258,3 +258,17 @@ app {
     transform: scale(2);
     -webkit-transform: scale(2);
 }
+
+/*Hide table details*/
+.hiddenRow {
+    padding: 0 !important;
+}
+
+/*SmallBox*/
+.boxColor {
+    float: left;
+    width: 20px;
+    height: 20px;
+    margin: 5px;
+    border: 1px solid rgba(0, 0, 0, .2);
+}

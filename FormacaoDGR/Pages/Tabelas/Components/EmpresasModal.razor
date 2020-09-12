@@ -1,0 +1,161 @@
+﻿@using FormacaoDGR.Data.Models
+@using FormacaoDGR.Data.Services
+@using Blazored.Typeahead
+
+@inject Sotsera.Blazor.Toaster.IToaster Toaster
+@inject IEmpresaService _empresaService
+@inject ICodigoPostalService _cpostalService
+@inject IGrupoService _grupoService
+@inject IJSRuntime _jsRuntime
+
+<Modal @ref="@EmpresaModal" role="dialog" id="empresaModal">
+    <ModalBackdrop />
+    <ModalContent Centered="true" Size="ModalSize.ExtraLarge">
+        <ModalHeader>
+            <ModalTitle>@CustomHeader</ModalTitle>
+            <CloseButton Clicked="@(() => CloseEmpresaModal("empresaModal"))" />
+        </ModalHeader>
+        @if (ModelEmpresa != null)
+        {
+            <EditForm Model="@ModelEmpresa" OnValidSubmit="@HandleValidSubmit">
+                <ModalBody>
+                    <DataAnnotationsValidator />
+                    <input type="hidden" @bind-value="@ModelEmpresa.ID" />
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is2">Nome</FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is10">
+                            <TextEdit @bind-Text="@ModelEmpresa.Nome" />
+                            <ValidationMessage For="@(() => ModelEmpresa.Nome)" />
+                        </FieldBody>
+                    </Field>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is2">Morada</FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is10">
+                            <MemoEdit Rows="2" @bind-Text="@ModelEmpresa.Morada" />
+                            <ValidationMessage For="@(() => ModelEmpresa.Morada)" />
+                        </FieldBody>
+                    </Field>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is2">Código Postal</FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is4">
+                            <Autocomplete Data="@CPostais"
+                                          MinLength="3"
+                                          TextField="@((item)=>item.CpLocalidade)"
+                                          ValueField="@((item)=>item.Cod_postal)"
+                                          SelectedValue="@ModelEmpresa.CodPostal"
+                                          SelectedValueChanged="@SearchCp"
+                                          Placeholder="Código Postal..." />
+                        </FieldBody>
+                    </Field>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is2">Telefone</FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is4">
+                            <Validation UsePattern="true">
+                                <TextEdit Pattern="^$|[0-9]{9}" @bind-Text="@ModelEmpresa.Telefone" MaxLength="9">
+                                    <Feedback>
+                                        <ValidationError>Por favor insira um número de telefone válido</ValidationError>
+                                    </Feedback>
+                                </TextEdit>
+                            </Validation>
+                            <ValidationMessage For="@(() => ModelEmpresa.Telefone)" />
+                        </FieldBody>
+                    </Field>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is2">Email</FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is4">
+                            <TextEdit Role="TextRole.Email" @bind-Text="@ModelEmpresa.Email" />
+                            <ValidationMessage For="@(() => ModelEmpresa.Email)" />
+                        </FieldBody>
+                    </Field>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is2">Contato</FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is6">
+                            <TextEdit @bind-Text="@ModelEmpresa.Contato">
+                                <FieldHelp>Pessoa a contactar</FieldHelp>
+                            </TextEdit>
+                            <ValidationMessage For="@(() => ModelEmpresa.Contato)" />
+                        </FieldBody>
+                    </Field>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is2">Grupo</FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is4">
+                            <Select TValue="Guid?" @bind-SelectedValue="@ModelEmpresa.GrupoID">
+                                @foreach (var grupo in AllGrupos)
+                                {
+                                    <SelectItem TValue="Guid?" Value="@grupo.ID">@grupo.Nome</SelectItem>
+                                }
+                            </Select>
+                            <small class="text-muted">Selecionar Grupo de Empresas</small>
+                            <ValidationMessage For="@(() => ModelEmpresa.GrupoID)" />
+                        </FieldBody>
+                    </Field>
+                </ModalBody>
+                <ModalFooter>
+                    <Tooltip Text="Gravar">
+                        <Button Color="Color.Success" Type="ButtonType.Submit">
+                            <Icon Name="IconName.Save" /> Submeter
+                        </Button>
+                    </Tooltip>
+                    <Tooltip Text="Fechar">
+                        <Button Color="Color.Warning" Clicked="@(() => CloseEmpresaModal("empresaModal"))">
+                            <Icon Name="IconName.StepBackward" /> Cancelar
+                        </Button>
+                    </Tooltip>
+                </ModalFooter>
+            </EditForm>
+        }
+    </ModalContent>
+</Modal>
+
+@code {
+    [Parameter] public Empresa ModelEmpresa { get; set; }
+    [Parameter] public Action DataChanged { get; set; }
+    [Parameter] public RenderFragment CustomHeader { get; set; }
+
+    IEnumerable<CodigoPostal> CPostais { get; set; }
+    IList<Grupo> AllGrupos { get; set; } = new List<Grupo>();
+
+    private Modal EmpresaModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AllGrupos = await _grupoService.GetAllAsync();
+        CPostais = await _cpostalService.GetAllAsync();
+    }
+
+    void SearchCp(object newValue)
+    {
+        if (newValue != null)
+        {
+            ModelEmpresa.CodPostal = newValue.ToString();
+            ModelEmpresa.Localidade = CPostais.Where(c => c.Cod_postal == newValue.ToString()).Select(l => l.Localidade).FirstOrDefault();
+        }
+    }
+
+    private async void HandleValidSubmit()
+    {
+
+        if (ModelEmpresa.ID == Guid.Empty)
+        {
+            await _empresaService.AddAsync(ModelEmpresa);
+
+            await Task.Delay(100);
+            Toaster.Success("Empresa adicionada com sucesso", "Sucesso!");
+        }
+        else
+        {
+            await _empresaService.UpdateAsync(ModelEmpresa);
+
+            await Task.Delay(100);
+            Toaster.Success("Empresa editada com sucesso", "Sucesso!");
+        }
+
+        await CloseEmpresaModal("empresaModal");
+        DataChanged?.Invoke();
+    }
+
+    private async Task CloseEmpresaModal(string modalId)
+    {
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", modalId);
+    }
+}

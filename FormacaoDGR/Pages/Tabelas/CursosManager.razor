@@ -1,0 +1,178 @@
+﻿@page "/cursosmanager"
+@attribute [Authorize]
+
+@using FormacaoDGR.Data.Models
+@using FormacaoDGR.Data.Services
+@using FormacaoDGR.Pages.Components
+@using FormacaoDGR.Pages.Tabelas.Components
+
+@inject Sotsera.Blazor.Toaster.IToaster Toaster
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ICursoService _cursoService
+@inject IJSRuntime _jsRuntime
+
+<AuthorizeView Context="authContext">
+    <Authorized>
+        <Container Fluid="true">
+            <Breadcrumb Mode="BreadcrumbMode.Auto">
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="">Início</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="#">Tabelas</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="cursosmanager">Cursos</BreadcrumbLink>
+                </BreadcrumbItem>
+            </Breadcrumb>
+            <Row>
+                <Column ColumnSize="ColumnSize.Is6.OnDesktop.Is12.OnMobile">
+                    <Card>
+                        <CardBody>
+                            <CardTitle Size="5">Cursos</CardTitle>
+                            <CardText>
+                                @if (AllCursos == null)
+                                {
+                                    <p><em>Loading...</em></p>
+                                }
+                                else
+                                {
+                                    <Table Striped="true" Bordered="true" Hoverable="true" FullWidth="false">
+                                        <TableHeader ThemeContrast="ThemeContrast.Light">
+                                            <TableRow>
+                                                <TableHeaderCell>Menu</TableHeaderCell>
+                                                <TableHeaderCell>Nome</TableHeaderCell>
+                                                <TableHeaderCell>Código</TableHeaderCell>
+                                                <TableHeaderCell>
+                                                    Duração <Heading Size="HeadingSize.Is6">(horas)</Heading>
+                                                </TableHeaderCell>
+                                                <TableHeaderCell>
+                                                    Validade <Heading Size="HeadingSize.Is6">(anos)</Heading>
+                                                </TableHeaderCell>
+                                                <TableHeaderCell>Côr</TableHeaderCell>
+                                                @if (authContext.User.IsInRole("temp")) //substituir por Admins
+                                                {
+                                                    <TableHeaderCell>Criado em:</TableHeaderCell>
+                                                    <TableHeaderCell>Criado por:</TableHeaderCell>
+                                                    <TableHeaderCell>Atualizado em:</TableHeaderCell>
+                                                    <TableHeaderCell>Atualizado por:</TableHeaderCell>
+                                                }
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            @foreach (Curso cursoItem in AllCursos)
+                                            {
+                                                <TableRow>
+                                                    <TableRowCell>
+                                                        <Tooltip Text="Editar Curso">
+                                                            <Button Color="Color.Info" Clicked="@(() => PrepareForEdit(cursoItem))"
+                                                                    data-toggle="modal" data-target="#cursoModal">
+                                                                <Icon Name="IconName.Edit" />
+                                                            </Button>
+                                                        </Tooltip>
+                                                        <Tooltip Text="Apagar Curso">
+                                                            <Button Color="Color.Danger" Clicked="@(() => PrepareForDelete(cursoItem))"
+                                                                    data-toggle="modal" data-target="#confirmDeleteModal">
+                                                                <Icon Name="IconName.Delete" />
+                                                            </Button>
+                                                        </Tooltip>
+                                                    </TableRowCell>
+                                                    <TableRowCell>@cursoItem.Nome</TableRowCell>
+                                                    <TableRowCell>@cursoItem.Codigo</TableRowCell>
+                                                    <TableRowCell>@cursoItem.Duracao</TableRowCell>
+                                                    <TableRowCell>@cursoItem.Validade</TableRowCell>
+                                                    <TableRowCell>
+                                                        <div class="boxColor" style="background: @cursoItem.Cor"></div>                                                        
+                                                    </TableRowCell>
+                                                    @if (authContext.User.IsInRole("temp")) //substituir por Admins
+                                                    {
+                                                        <TableRowCell>@cursoItem.CreatedAt</TableRowCell>
+                                                        <TableRowCell>@cursoItem.CreatedBy</TableRowCell>
+                                                        <TableRowCell>@cursoItem.LastUpdatedAt</TableRowCell>
+                                                        <TableRowCell>@cursoItem.LastUpdatedBy</TableRowCell>
+                                                    }
+                                                </TableRow>
+                                            }
+                                        </TableBody>
+                                    </Table>
+
+                                }
+
+                                <Tooltip Text="Criar novo Curso">
+                                    <Button Color="Color.Success" Clicked="@(() => InitializeGrupoObject())"
+                                            data-toggle="modal" data-target="#cursoModal">
+                                        Criar <Icon Name="IconName.Add" />
+                                    </Button>
+                                </Tooltip>
+                            </CardText>
+                        </CardBody>
+                    </Card>
+                </Column>
+            </Row>
+        </Container>
+
+        <ConfirmDialog OnClick="@Delete" />
+        <CursosModal ModelCurso=modelCurso DataChanged="@DataChanged">
+                <CustomHeader>@customHeader</CustomHeader>
+            </CursosModal>
+
+    </Authorized>
+    <NotAuthorized>
+        <p>Não está logado.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+
+    IList<Curso> AllCursos = new List<Curso>();
+    Curso modelCurso = new Curso();
+
+    string customHeader = string.Empty;
+
+    //protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAllCursos();
+    }
+
+    private void InitializeGrupoObject()
+    {
+        modelCurso = new Curso();
+        customHeader = "Adicionar Curso";
+    }
+
+    private async void DataChanged()
+    {
+        await GetAllCursos();
+        StateHasChanged();
+    }
+
+    public async Task GetAllCursos()
+    {
+        AllCursos = await _cursoService.GetAllAsync();
+    }
+
+    private void PrepareForEdit(Curso curso)
+    {
+        customHeader = "Editar Curso";
+        modelCurso = curso;
+    }
+
+    private void PrepareForDelete(Curso curso)
+    {
+        modelCurso = curso;
+    }
+
+    private async Task Delete()
+    {
+        await _cursoService.DeleteAsync(modelCurso);
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", "confirmDeleteModal");
+
+        AllCursos = await _cursoService.GetAllAsync();
+        modelCurso = new Curso();
+
+        await Task.Delay(100);
+        Toaster.Error("Curso apagado com sucesso", "Sucesso!");
+    }
+
+}

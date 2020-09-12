@@ -6,29 +6,29 @@ using System.Threading.Tasks;
 
 namespace FormacaoDGR.Data.Services
 {
-    public interface IEmpresaService
+    public interface IDepartamentoService
     {
-        Task<IList<Empresa>> GetAllAsync();
-        Task<Empresa> GetAsync(Guid id);
-        Task<Empresa> AddAsync(Empresa empresa);
-        Task<Empresa> UpdateAsync(Empresa empresa);
-        Task<Empresa> DeleteAsync(Empresa empresa);
+        Task<IList<Departamento>> GetAllAsync();
+        Task<Departamento> GetAsync(string id);
+        Task<Departamento> AddAsync(Departamento dep);
+        Task<Departamento> UpdateAsync(Departamento dep);
+        Task<Departamento> DeleteAsync(Departamento dep);
     }
 
-    public class EmpresaService : IEmpresaService
+    public class DepartamentoService : IDepartamentoService
     {
         private readonly ApplicationDbContext _db;
 
-        public EmpresaService(ApplicationDbContext context)
+        public DepartamentoService(ApplicationDbContext context)
         {
             _db = context;
         }
 
-        public async Task<IList<Empresa>> GetAllAsync()
+        public async Task<IList<Departamento>> GetAllAsync()
         {
             try
             {
-                return await _db.Empresas.Include(g => g.Grupo).ToListAsync();
+                return await _db.Departamentos.ToListAsync();
             }
             catch (Exception)
             {
@@ -36,12 +36,12 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Empresa> GetAsync(Guid id)
+        public async Task<Departamento> GetAsync(string id)
         {
             try
             {
-                Empresa empresa = await _db.Empresas.Include(g => g.Grupo).FirstOrDefaultAsync(i => i.ID == id);
-                return empresa;
+                Departamento dep = await _db.Departamentos.FindAsync(id);
+                return dep;
             }
             catch (Exception)
             {
@@ -49,13 +49,13 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Empresa> AddAsync(Empresa empresa)
+        public async Task<Departamento> AddAsync(Departamento dep)
         {
             try
             {
-                _ = _db.Empresas.Add(empresa);
+                _ = _db.Departamentos.Add(dep);
                 _ = await _db.SaveChangesAsync();
-                return empresa;
+                return dep;
             }
             catch (Exception)
             {
@@ -63,13 +63,14 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Empresa> UpdateAsync(Empresa empresa)
+        public async Task<Departamento> UpdateAsync(Departamento dep)
         {
             try
             {
-                _ = _db.Entry(empresa).State = EntityState.Modified;
+                _db.Entry(dep).State = EntityState.Modified;
                 _ = await _db.SaveChangesAsync();
-                return empresa;
+                return dep;
+
             }
             catch (Exception)
             {
@@ -77,19 +78,18 @@ namespace FormacaoDGR.Data.Services
             }
         }
 
-        public async Task<Empresa> DeleteAsync(Empresa empresa)
+        public async Task<Departamento> DeleteAsync(Departamento dep)
         {
             try
             {
-                _ = _db.Empresas.Remove(empresa);
+                _ = _db.Departamentos.Remove(dep);
                 _ = await _db.SaveChangesAsync();
-                return empresa;
+                return dep;
             }
             catch (Exception)
             {
                 throw;
             }
         }
-
     }
 }

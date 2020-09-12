@@ -1,28 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Globalization;
 
 namespace FormacaoDGR.Data.Models
 {
-    [Table("Grupos")]
-    public class Grupo : IBaseEntity
+    [Table("FormandosDetalhes")]
+    public class FormandoDetalhe : IBaseEntity
     {
-        [Key]
-        public Guid ID { get; set; }
+        [Key, ForeignKey("Formando")]
+        public Guid FormandoID { get; set; }
 
-        private string _nome;
-        [Required(ErrorMessage = "O campo Nome é obrigatório"), Display(Name = "Nome")]
-        [StringLength(50, ErrorMessage = "O campo {0} deve de conter entre {2} e {1} caracteres.", MinimumLength = 3)]
-        public string Nome
-        {
-            get => _nome;
-            set => _nome = value?.ToUpper(CultureInfo.InvariantCulture);
-        }
+        [Display(Name = "Morada")]
+        [StringLength(200, ErrorMessage = "O campo {0} deve de conter entre {2} e {1} caracteres.", MinimumLength = 3)]
+        public string Morada { get; set; }
+
+        [Display(Name = "Código Postal")]
+        public string CodPostal { get; set; }
+
+        [Display(Name = "Localidade")]
+        public string Localidade { get; set; }
+
+        [Display(Name = "Telefone")]
+        public string Telefone { get; set; }
+
+        [Display(Name = "E-mail"), EmailAddress]
+        public string Email { get; set; }
 
         #region Relações
-        public virtual ICollection<Empresa> Empresas { get; set; }
+        public Formando Formando { get; set; }
         #endregion
 
         #region BaseEntity

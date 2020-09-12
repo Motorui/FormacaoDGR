@@ -1,8 +1,29 @@
 ﻿@page "/"
 @attribute [Authorize]
 
-<h1>Hello, world!</h1>
+<AuthorizeView Context="authContext">
+    <Authorized>
+        <Container Fluid="true">
+            <Breadcrumb Mode="BreadcrumbMode.Auto">
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="">Início</BreadcrumbLink>
+                </BreadcrumbItem>
+            </Breadcrumb>
+            <Row>
+                <Column ColumnSize="ColumnSize.Is12">
+                    <Heading Size="HeadingSize.Is3">Início</Heading>
+                    @if (authContext.User.IsInRole("temp")) //substituir por Admins
+                    { }
+                </Column>
+            </Row>
+        </Container>
 
-Welcome to your new app.
+</Authorized>
+    <NotAuthorized>
+        <p>Não está logado.</p>
+    </NotAuthorized>
+</AuthorizeView>
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+@code {
+
+}

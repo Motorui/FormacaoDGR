@@ -7,9 +7,10 @@
 @using FormacaoDGR.Pages.Components
 @using FormacaoDGR.Pages.Admin.Components
 
+@inherits OwningComponentBase<UserManager<ApplicationUser>>
+
 @inject Sotsera.Blazor.Toaster.IToaster Toaster
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject UserManager<ApplicationUser> _UserManager
 @inject IAppUserService _appUserService
 @inject IAppRoleService _appRoleService
 @inject IAppUserRoleService _appUserRoleService
@@ -17,89 +18,101 @@
 @inject IUhService _uhService
 @inject IJSRuntime _jsRuntime
 
-<AuthorizeView>
+<AuthorizeView Context="authContext">
     <Authorized>
-        <div class="col-lg-12 col-md-12 col-sm12 col-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Utilizadores</h5>
-                    @if (AllUsers == null)
-                    {
-                        <p><em>Loading...</em></p>
-                    }
-                    else
-                    {
-                        <table class="table table-bordered table-hover table-striped table-responsive">
-                            <thead>
-                                <tr>
-                                    @if (@context.User.IsInRole("temp")) //substituir por Admins
-                                    {
-
-                                    }
-                                    <th>Email</th>
-                                    <th>Nome</th>
-                                    <th>Função</th>
-                                    <th>UH'S</th>
-                                    <th>Menu</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var userItem in AllUsers)
+        <Container Fluid="true">
+            <Breadcrumb Mode="BreadcrumbMode.Auto">
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="">Início</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="uhsmanager">Utilizadores</BreadcrumbLink>
+                </BreadcrumbItem>
+            </Breadcrumb>
+            <Row>
+                <Column ColumnSize="ColumnSize.Is6.OnDesktop.Is12.OnMobile">
+                    <Card>
+                        <CardBody>
+                            <CardTitle Size="5">Unidades de Handling</CardTitle>
+                            <CardText>
+                                @if (AllUsers == null)
                                 {
-                                    <tr>
-                                        <td>@userItem.UserName</td>
-                                        <td>@userItem.Name</td>
-                                        <td>
-                                            @{var listRoles = AllUserRoles.Where(i => i.UserId == userItem.Id);}
-                                            @foreach (var r in listRoles)
-                                            {
-                                                <p>
-                                                    @{ var roleName = AllRoles.Where(i => i.Id == r.RoleId).Select(n => n.Name).FirstOrDefault().ToString();}
-                                                    @roleName
-                                                </p>
-                                            }
-                                        </td>
-                                        <td>
-                                            @{var listUhs = AllUserUhs.Where(i => i.UserId == userItem.Id);}
-                                            @foreach (var u in listUhs)
-                                            {
-                                                var uhIata = AllUhs.Where(i => i.UhID == u.UhID).Select(n => n.UhNome).FirstOrDefault().ToString();
-                                                <span class="badge badge-secondary">@uhIata</span>
-                                            }
-                                        </td>
-                                        <td>
-                                            <span data-toggle="tooltip" data-placement="top" title="Editar">
-                                                <button type="button" class="btn btn-primary btn-circle btn-sm" data-toggle="modal" data-target="#userModal"
-                                                        @onclick="(() => PrepareForEdit(userItem))">
-                                                    <span class="oi oi-pencil"></span>
-                                                </button>
-                                            </span>
-                                            <span data-toggle="tooltip" data-placement="top" title="Apagar">
-                                                <button type="button" class="btn btn-danger btn-circle btn-sm" data-toggle="modal" data-target="#confirmDeleteModal"
-                                                        @onclick="(() => PrepareForDelete(userItem))">
-                                                    <span class="oi oi-trash"></span>
-                                                </button>
-                                            </span>
-                                        </td>
-                                    </tr>
+                                    <p><em>Loading...</em></p>
                                 }
-                            </tbody>
-                        </table>
+                                else
+                                {
+                                    <Table Striped="true" Bordered="true" Hoverable="true" FullWidth="false">
+                                        <TableHeader ThemeContrast="ThemeContrast.Light">
+                                            <TableRow>
+                                                @if (@authContext.User.IsInRole("temp")) //substituir por Admins
+                                                {
 
-                    }
-                    <div>
-                        <span data-toggle="tooltip" data-placement="top" title="Adicionar">
-                            <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#userModal" @onclick="(() => InitializeUserObject())">
-                                Criar <span class="oi oi-plus" style="font-size: 12px;"></span>
-                            </button>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
+                                                }
+                                                <TableHeaderCell>Menu</TableHeaderCell>
+                                                <TableHeaderCell>Email</TableHeaderCell>
+                                                <TableHeaderCell>Nome</TableHeaderCell>
+                                                <TableHeaderCell>Função</TableHeaderCell>
+                                                <TableHeaderCell>UH'S</TableHeaderCell>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            @foreach (var userItem in AllUsers)
+                                            {
+                                                <TableRow>
+                                                    <TableRowCell>
+                                                        <Tooltip Text="Editar Utilizador">
+                                                            <Button Color="Color.Info" Clicked="@(() => PrepareForEdit(userItem))"
+                                                                    data-toggle="modal" data-target="#userModal">
+                                                                <Icon Name="IconName.Edit" />
+                                                            </Button>
+                                                        </Tooltip>
+                                                        <Tooltip Text="Apagar Utilizador">
+                                                            <Button Color="Color.Danger" Clicked="@(() => PrepareForDelete(userItem))"
+                                                                    data-toggle="modal" data-target="#confirmDeleteModal">
+                                                                <Icon Name="IconName.Delete" />
+                                                            </Button>
+                                                        </Tooltip>
+                                                    </TableRowCell>
+                                                    <TableRowCell>@userItem.UserName</TableRowCell>
+                                                    <TableRowCell>@userItem.Name</TableRowCell>
+                                                    <TableRowCell>
+                                                        @{var listRoles = AllUserRoles.Where(i => i.UserId == userItem.Id);}
+                                                        @foreach (var r in listRoles)
+                                                        {
+                                                        <p>
+                                                            @{ var roleName = AllRoles.Where(i => i.Id == r.RoleId).Select(n => n.Name).FirstOrDefault().ToString();}
+                                                            <Badge Color="Color.Secondary">@roleName</Badge>
+                                                        </p>
+                                                        }
+                                                    </TableRowCell>
+                                                    <TableRowCell>
+                                                        @{var listUhs = AllUserUhs.Where(i => i.UserId == userItem.Id);}
+                                                        @foreach (var u in listUhs)
+                                                        {
+                                                            var uhIata = AllUhs.Where(i => i.UhID == u.UhID).Select(n => n.UhNome).FirstOrDefault().ToString();
+                                                            <Badge Color="Color.Info">@uhIata</Badge>
+                                                        }
+                                                    </TableRowCell>
+                                                </TableRow>
+                                            }
+                                        </TableBody>
+                                    </Table>
+
+                                }
+                                <Tooltip Text="Criar novo utilizador">
+                                    <Button Color="Color.Success" Clicked="@(() => InitializeUserObject())"
+                                            data-toggle="modal" data-target="#userModal">
+                                        Criar <Icon Name="IconName.Add" />
+                                    </Button>
+                                </Tooltip>
+                            </CardText>
+                        </CardBody>
+                    </Card>
+                </Column>
+            </Row>
+        </Container>
 
         <ConfirmDialog OnClick="@Delete" />
-
         <UserModal ModelUser=modelUser DataChanged="@DataChanged" IsEdit="@isEdit">
             <CustomHeader>@customHeader</CustomHeader>
         </UserModal>
@@ -149,7 +162,7 @@
 
     private async Task Delete()
     {
-        var user = await _UserManager.FindByIdAsync(modelUser.Id);
+        var user = await Service.FindByIdAsync(modelUser.Id);
         if (user != null)
         {
             try
@@ -165,7 +178,7 @@
             finally
             {
                 // Delete the user
-                var deletUser = await _UserManager.DeleteAsync(user);
+                var deletUser = await Service.DeleteAsync(user);
             }
         }
 
@@ -188,7 +201,7 @@
     {
         AllUsers = new List<ApplicationUser>();
 
-        var user = _UserManager.Users.Select(x => new ApplicationUser
+        var user = Service.Users.Select(x => new ApplicationUser
         {
             Id = x.Id,
             UserName = x.UserName,

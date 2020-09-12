@@ -1,5 +1,7 @@
 ﻿using FormacaoDGR.Data;
+using FormacaoDGR.Data.Models;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace FormacaoDGR.Areas.Identity.Models
@@ -16,6 +18,11 @@ namespace FormacaoDGR.Areas.Identity.Models
         [StringLength(3, ErrorMessage = "O campo {0} deve de conter entre {2} e {1} caracteres.", MinimumLength = 3)]
         public string UhIATA { get; set; }
 
+        #region Relações
+        public virtual ICollection<MarcacaoInicial> MarcacoesIniciais { get; set; }
+        #endregion
+
+        #region BaseEntity
         [Display(Name = "Registo criado em:", ShortName = "Criado em:")]
         public DateTime? CreatedAt { get; set; }
         [Display(Name = "Registo criado por:", ShortName = "Criado por:")]
@@ -24,5 +31,6 @@ namespace FormacaoDGR.Areas.Identity.Models
         public DateTime? LastUpdatedAt { get; set; }
         [Display(Name = "Registo atualizado por:", ShortName = "Atualizado por:")]
         public string LastUpdatedBy { get; set; }
+        #endregion
     }
 }

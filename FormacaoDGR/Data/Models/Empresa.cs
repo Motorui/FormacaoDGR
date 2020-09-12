@@ -1,16 +1,25 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Globalization;
 
 namespace FormacaoDGR.Data.Models
 {
+    [Table("Empresas")]
     public class Empresa : IBaseEntity
     {
         [Key]
         public Guid ID { get; set; }
 
+        private string _nome;
         [Required(ErrorMessage = "O campo {0} é obrigatório"), Display(Name = "Nome")]
         [StringLength(75, ErrorMessage = "O campo {0} deve de conter entre {2} e {1} caracteres.", MinimumLength = 3)]
-        public string Nome { get; set; }
+        public string Nome
+        {
+            get => _nome;
+            set => _nome = value?.ToUpper(CultureInfo.InvariantCulture);
+        }
 
         [Display(Name = "Morada")]
         [StringLength(200, ErrorMessage = "O campo {0} deve de conter entre {2} e {1} caracteres.", MinimumLength = 3)]
@@ -25,7 +34,7 @@ namespace FormacaoDGR.Data.Models
         [Display(Name = "Telefone")]
         public string Telefone { get; set; }
 
-        [Display(Name = "E-mail")]
+        [Display(Name = "E-mail"), EmailAddress]
         public string Email { get; set; }
 
         [Display(Name = "Contato")]
@@ -36,6 +45,11 @@ namespace FormacaoDGR.Data.Models
         public Guid? GrupoID { get; set; }
         public Grupo Grupo { get; set; }
 
+        #region Relações
+        public virtual ICollection<Formando> Formandos { get; set; }
+        #endregion
+
+        #region BaseEntity
         [Display(Name = "Registo criado em:", ShortName = "Criado em:")]
         public DateTime? CreatedAt { get; set; }
         [Display(Name = "Registo criado por:", ShortName = "Criado por:")]
@@ -44,5 +58,6 @@ namespace FormacaoDGR.Data.Models
         public DateTime? LastUpdatedAt { get; set; }
         [Display(Name = "Registo atualizado por:", ShortName = "Atualizado por:")]
         public string LastUpdatedBy { get; set; }
+        #endregion
     }
 }

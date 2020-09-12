@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FormacaoDGR.Areas.Identity.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -6,8 +7,8 @@ using System.Globalization;
 
 namespace FormacaoDGR.Data.Models
 {
-    [Table("Grupos")]
-    public class Grupo : IBaseEntity
+    [Table("Salas")]
+    public class Sala : IBaseEntity
     {
         [Key]
         public Guid ID { get; set; }
@@ -21,8 +22,15 @@ namespace FormacaoDGR.Data.Models
             set => _nome = value?.ToUpper(CultureInfo.InvariantCulture);
         }
 
+        [Required(ErrorMessage = "O campo Capacidade é obrigatório"), Display(Name = "Capacidade")]
+        public int Capacidade { get; set; }
+
         #region Relações
-        public virtual ICollection<Empresa> Empresas { get; set; }
+        [Required, Display(Name = "Unidade de hanling", ShortName = "UH")]
+        public Guid UhID { get; set; }
+        public Uh Uh { get; set; }
+        public virtual ICollection<MarcacaoInicial> MarcacoesIniciais { get; set; }
+
         #endregion
 
         #region BaseEntity

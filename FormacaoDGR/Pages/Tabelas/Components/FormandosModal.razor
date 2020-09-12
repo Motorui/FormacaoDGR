@@ -1,0 +1,116 @@
+﻿@using FormacaoDGR.Data.Models
+@using FormacaoDGR.Data.Services
+
+@inject Sotsera.Blazor.Toaster.IToaster Toaster
+@inject IFormandoService _formandoService
+@inject IEmpresaService _empresaService
+@inject IDepartamentoService _departamentoService
+@inject IJSRuntime _jsRuntime
+
+<Modal @ref="@FormandoModal" role="dialog" id="formandoModal">
+    <ModalBackdrop />
+    <ModalContent Centered="true" Size="ModalSize.Default">
+        <ModalHeader>
+            <ModalTitle>@CustomHeader</ModalTitle>
+            <CloseButton Clicked="@(() => CloseFormandoModal("formandoModal"))" />
+        </ModalHeader>
+        <EditForm Model="@ModelFormando" OnValidSubmit="@HandleValidSubmit">
+            <ModalBody>
+                <DataAnnotationsValidator />
+                <input type="hidden" @bind-value="@ModelFormando.ID" />
+                <Field>
+                    <FieldLabel>Nome</FieldLabel>
+                    <TextEdit @bind-Text="@ModelFormando.Nome">
+                        <FieldHelp>Inserir nome do formando</FieldHelp>
+                    </TextEdit>
+                    <ValidationMessage For="@(() => ModelFormando.Nome)" />
+                </Field>
+                <Field>
+                    <FieldLabel>Interno?</FieldLabel>
+                    <Check TValue="bool" @bind-Checked="@ModelFormando.Interno">
+                        <FieldHelp>O formando é interno?</FieldHelp>
+                    </Check>
+                    <ValidationMessage For="@(() => ModelFormando.Interno)" />
+                </Field>
+                <Field>
+                    <FieldLabel>Empresa</FieldLabel>
+                    <Select TValue="Guid?" @bind-SelectedValue=@ModelFormando.EmpresaID>
+                        @foreach (var empresa in AllEmpresas)
+                        {
+                            <SelectItem Value=@empresa.ID>@empresa.Nome</SelectItem>
+                        }
+                    </Select>
+                    <small class="text-muted">Selecionar Empresa</small>
+                    <ValidationMessage For="@(() => ModelFormando.EmpresaID)" />
+                </Field>
+                <Field>
+                    <FieldLabel>Departamento</FieldLabel>
+                    <Select TValue="Guid?" @bind-SelectedValue="@ModelFormando.DepartamentoID">
+                        @foreach (var departamento in AllDepartamentos)
+                        {
+                            <SelectItem Value="@departamento.ID">@departamento.Nome</SelectItem>
+                        }
+                    </Select>
+                    <small class="text-muted">Selecionar departamento</small>
+                    <ValidationMessage For="@(() => ModelFormando.DepartamentoID)" />
+                </Field>
+            </ModalBody>
+            <ModalFooter>
+                <Tooltip Text="Gravar">
+                    <Button Color="Color.Success" Type="ButtonType.Submit">
+                        <Icon Name="IconName.Save" /> Submeter
+                    </Button>
+                </Tooltip>
+                <Tooltip Text="Fechar">
+                    <Button Color="Color.Warning" Clicked="@(() => CloseFormandoModal("formandoModal"))">
+                        <Icon Name="IconName.StepBackward" /> Cancelar
+                    </Button>
+                </Tooltip>
+            </ModalFooter>
+        </EditForm>
+    </ModalContent>
+</Modal>
+
+@code {
+    [Parameter] public Formando ModelFormando { get; set; }
+    [Parameter] public Action DataChanged { get; set; }
+    [Parameter] public RenderFragment CustomHeader { get; set; }
+
+    private Modal FormandoModal;
+
+    private IList<Empresa> AllEmpresas { get; set; } = new List<Empresa>();
+    private IList<Departamento> AllDepartamentos { get; set; } = new List<Departamento>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        AllEmpresas = await _empresaService.GetAllAsync();
+        AllDepartamentos = await _departamentoService.GetAllAsync();
+    }
+
+    private async void HandleValidSubmit()
+    {
+        if (ModelFormando.ID == Guid.Empty)
+        {
+            await _formandoService.AddAsync(ModelFormando);
+
+            await Task.Delay(100);
+            Toaster.Success("Formando adicionado com sucesso", "Sucesso!");
+        }
+        else
+        {
+            await _formandoService.UpdateAsync(ModelFormando);
+
+            await Task.Delay(100);
+            Toaster.Success("Formando editado com sucesso", "Sucesso!");
+        }
+
+        DataChanged?.Invoke();
+        await CloseFormandoModal("formandoModal");
+    }
+
+    private async Task CloseFormandoModal(string modalId)
+    {
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", modalId);
+    }
+
+}

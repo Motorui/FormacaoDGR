@@ -1,0 +1,207 @@
+﻿@page "/empresasmanager"
+@attribute [Authorize]
+
+@using FormacaoDGR.Data.Models
+@using FormacaoDGR.Data.Services
+@using FormacaoDGR.Pages.Components
+@using FormacaoDGR.Pages.Tabelas.Components
+@using Blazorise.DataGrid
+
+@inject Sotsera.Blazor.Toaster.IToaster Toaster
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IEmpresaService _empresaService
+@inject IGrupoService _grupoService
+@inject IJSRuntime _jsRuntime
+
+<AuthorizeView Context="authContext">
+    <Authorized>
+        <Container Fluid="true">
+            <Breadcrumb Mode="BreadcrumbMode.Auto">
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="">Início</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="#">Tabelas</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbItem>
+                    <BreadcrumbLink To="empresasmanager">Empresas</BreadcrumbLink>
+                </BreadcrumbItem>
+            </Breadcrumb>
+            <Row>
+                <Column ColumnSize="ColumnSize.Is12">
+                    <Card>
+                        <CardBody>
+                            <CardTitle Size="5">Empresas</CardTitle>
+                            <CardText>
+                                @if (AllEmpresas == null)
+                                {
+                                    <p><em>Loading...</em></p>
+                                }
+                                else
+                                {
+                                    <DataGrid TItem="Empresa"
+                                              Data="@AllEmpresas"
+                                              @bind-SelectedRow="@modelEmpresa"
+                                              Filterable="true"
+                                              Sortable="true"
+                                              Editable="true"
+                                              UseInternalEditing="true"
+                                              SelectedRowStyling="@OnSelectedRowStyling"
+                                              EditMode="DataGridEditMode.Popup"
+                                              ShowPager="true"
+                                              PageSize="10"
+                                              Striped="true"
+                                              Bordered="true"
+                                              Hoverable="true"
+                                              DetailRowTrigger="@((item)=>item.ID == modelEmpresa?.ID)">
+                                        <ChildContent>
+                                            <DataGridCommandColumn TItem="Empresa">
+                                                <NewCommandTemplate>
+                                                    <Tooltip Text="Criar nova Empresa">
+                                                        <Button Color="Color.Success" Clicked="@(() => InitializeEmpresaObject())" data-toggle="modal" data-target="#empresaModal">
+                                                            Criar <Icon Name="IconName.Add" />
+                                                        </Button>
+                                                    </Tooltip>
+                                                </NewCommandTemplate>
+                                                <EditCommandTemplate>
+                                                    <Tooltip Text="Editar">
+                                                        <Button Color="Color.Primary" Clicked="@(() => PrepareForEdit(context.Item))" data-toggle="modal" data-target="#empresaModal">
+                                                            <Icon Name="IconName.Pen" />
+                                                        </Button>
+                                                    </Tooltip>
+                                                </EditCommandTemplate>
+                                                <DeleteCommandTemplate>
+                                                    <Tooltip Text="Apagar Empresa">
+                                                        <Button Color="Color.Danger" Clicked="@(() => PrepareForDelete(context.Item))" data-toggle="modal" data-target="#confirmDeleteModal">
+                                                            <Icon Name="IconName.Delete" />
+                                                        </Button>
+                                                    </Tooltip>
+                                                </DeleteCommandTemplate>
+                                                <ClearFilterCommandTemplate>
+                                                    <Button Color="Color.Light" Clicked="@context.Clicked">
+                                                        <Icon Name="IconName.Clear" />
+                                                    </Button>
+                                                </ClearFilterCommandTemplate>
+                                            </DataGridCommandColumn>
+                                            <DataGridColumn TItem="Empresa" Field="@nameof(Empresa.GrupoID)" Caption="Grupo" Sortable="true" Editable="true">
+                                                <DisplayTemplate>
+                                                    @($"{(context as Empresa)?.Grupo.Nome}")
+                                                </DisplayTemplate>
+                                                @*<EditTemplate>
+                                                    <Select @bind-SelectedValue="@context.CellValue">
+                                                        @foreach (var grupo in AllGrupos)
+                                                            {
+                                                            <SelectItem Value="@grupo.ID">@grupo.Nome</SelectItem>
+                                                            }
+                                                    </Select>
+                                                    <small class="text-muted">Selecionar Grupo</small>
+                                                </EditTemplate>*@
+                                            </DataGridColumn>
+                                            <DataGridColumn TItem="Empresa" Field="@nameof(Empresa.Nome)" Caption="Nome" Sortable="true" Editable="true" />
+                                            <DataGridColumn TItem="Empresa" Field="@nameof(Empresa.Telefone)" Caption="Telefone" Editable="true" />
+                                            <DataGridColumn TItem="Empresa" Field="@nameof(Empresa.Email)" Caption="Email" Editable="true" />
+                                            <DataGridColumn TItem="Empresa" Field="@nameof(Empresa.Contato)" Caption="Contato" Editable="true" Displayable="false" />
+                                        </ChildContent>
+                                        <EmptyTemplate>
+                                            <div class="box">
+                                                Não foram encontradas empresas na base de dados
+                                            </div>
+                                        </EmptyTemplate>
+                                        <LoadingTemplate>
+                                            <div class="box">
+                                                <progress class="progress is-small is-primary" max="100" />
+                                            </div>
+                                        </LoadingTemplate>
+                                        <DetailRowTemplate>
+                                            @{
+                                                <DataGrid TItem="Empresa" Data="@AllEmpresas.Where(x => x.ID == context.ID)"
+                                                          Editable="false" UseInternalEditing="false"
+                                                          Sortable="false" SelectedRowStyling="@OnSelectedRowStyling">
+                                                    <DataGridColumn TItem="Empresa" Field="@nameof(Empresa.Morada)" Caption="Morada" />
+                                                    <DataGridColumn TItem="Empresa" Field="@nameof(Empresa.CodPostal)" Caption="Codigo Postal" />
+                                                    <DataGridColumn TItem="Empresa" Field="@nameof(Empresa.Localidade)" Caption="Localidade" />
+                                                    @if (authContext.User.IsInRole("temp")) //substituir por Admins
+                                                    {
+                                                        <DataGridDateColumn TItem="Empresa" Field="@nameof(Empresa.CreatedAt)" Caption="Criado em:" />
+                                                        <DataGridColumn TItem="Empresa" Field="@nameof(Empresa.CreatedBy)" Caption="Criado por:" />
+                                                        <DataGridDateColumn TItem="Empresa" Field="@nameof(Empresa.LastUpdatedAt)" Caption="Atualizado em:" />
+                                                        <DataGridColumn TItem="Empresa" Field="@nameof(Empresa.LastUpdatedBy)" Caption="Atualizado por:" />
+                                                    }
+                                                </DataGrid>
+                                            }
+                                        </DetailRowTemplate>
+                                    </DataGrid>
+                                }
+                            </CardText>
+                        </CardBody>
+                    </Card>
+                </Column>
+            </Row>
+        </Container>
+
+        <ConfirmDialog OnClick="@Delete" />
+        <EmpresasModal ModelEmpresa=modelEmpresa DataChanged="@DataChanged">
+                <CustomHeader>@customHeader</CustomHeader>
+            </EmpresasModal>
+
+    </Authorized>
+    <NotAuthorized>
+        <p>Não está logado.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    IList<Empresa> AllEmpresas = new List<Empresa>();
+    Empresa modelEmpresa = new Empresa();
+    string customHeader = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetData();
+    }
+
+    private void InitializeEmpresaObject()
+    {
+        modelEmpresa = new Empresa();
+        customHeader = "Adicionar Empresa";
+    }
+
+    private async void DataChanged()
+    {
+        await GetData();
+        StateHasChanged();
+    }
+
+    public async Task GetData()
+    {
+        AllEmpresas = await _empresaService.GetAllAsync();
+    }
+
+    private void PrepareForEdit(Empresa empresa)
+    {
+        customHeader = "Editar Empresa";
+        modelEmpresa = empresa;
+    }
+
+    private void PrepareForDelete(Empresa empresa)
+    {
+        modelEmpresa = empresa;
+    }
+
+    private async Task Delete()
+    {
+        await _empresaService.DeleteAsync(modelEmpresa);
+        await _jsRuntime.InvokeAsync<object>("global.closeModal", "confirmDeleteModal");
+
+        await GetData();
+        modelEmpresa = new Empresa();
+
+        await Task.Delay(100);
+        Toaster.Error("Empresa apagada com sucesso", "Sucesso!");
+    }
+
+    void OnSelectedRowStyling(Empresa empresa, DataGridRowStyling styling)
+    {
+        styling.Background = Background.Light;
+    }
+}
